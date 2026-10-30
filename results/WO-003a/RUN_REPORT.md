@@ -58,5 +58,6 @@ modal run modal_app.py --action wo003a
 - Prior aborted launches: `KeyError('idx')` on `prompts.jsonl` (field is `prompt_idx`); `AssertionError` on sanity-2 3% threshold — both fixed before the COMPLETE run.
 
 ## Figures / outputs
-- `results/WO-003a/metrics.json`, `fig_*.png`, `raw/per_row.jsonl`, `raw/inspection_top30.txt`, `raw/analysis_log.txt`
+- `results/WO-003a/metrics.json`, `fig_*.png`, `raw/inspection_top30.txt`, `raw/analysis_log.txt`
+- `raw/per_row.jsonl` (~56 MB): on Modal volume + local pull; **gitignored** (>50 MB rule)
 - Ledger row: `WO-003a,wo_003a_analysis,CPU,...`
