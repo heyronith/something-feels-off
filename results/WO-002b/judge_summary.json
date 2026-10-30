@@ -1,0 +1,13 @@
+{
+  "model": "gpt-4.1-mini",
+  "n_calls": 1800,
+  "parse_failures": 19,
+  "parse_failures_detection": 17,
+  "parse_failures_identification": 2,
+  "tokens": {
+    "prompt": 1159588,
+    "completion": 423095,
+    "total": 1582683
+  },
+  "est_usd": 1.1407872
+}
