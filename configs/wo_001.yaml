@@ -1,0 +1,25 @@
+wo_id: WO-001
+layer: 37
+alphas: [2, 4]
+batch_size: 32
+max_new_tokens: 100
+temperature: 1.0
+seed_base: 1000
+vector_batch_size: 16
+inject_trials_per_concept: 6
+control_repeats: 50
+control_trial_ns: [1, 2, 3, 4, 5, 6]
+random_trial_ns: [1, 2]
+yesbias_steered_trial_ns: [1, 2, 3]
+yesbias_unsteered_repeats: 5
+judge:
+  model: gpt-4.1-mini
+  temperature: 0.0
+  max_tokens: 500
+  max_workers: 16
+gpu:
+  type: A100-80GB
+  timeout_minutes: 120
+  cpu_cores: 8
+  memory_mib: 65536
+projected_gpu_limit_hours: 1.5

@@ -25,6 +25,62 @@ def git_hash(cwd: Optional[str] = None) -> str:
         return os.environ.get("SFO_GIT_HASH", "unknown")
 
 
+def assert_clean_pushed_main(cwd: Optional[str] = None) -> str:
+    """
+    Assert a clean working tree and that HEAD exists on origin/main.
+
+    Returns the HEAD hash to use for run logging. Aborts (raises) otherwise.
+    """
+    root = cwd or os.getcwd()
+
+    status = subprocess.check_output(
+        ["git", "status", "--porcelain"],
+        cwd=root,
+        text=True,
+    )
+    if status.strip():
+        raise RuntimeError(
+            "Working tree is not clean. Commit or stash changes before launching "
+            f"GPU runs.\n{status}"
+        )
+
+    subprocess.check_call(
+        ["git", "fetch", "origin", "main"],
+        cwd=root,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+
+    head = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], cwd=root, text=True
+    ).strip()
+    origin_main = subprocess.check_output(
+        ["git", "rev-parse", "origin/main"], cwd=root, text=True
+    ).strip()
+
+    # HEAD must be an ancestor of (or equal to) origin/main — i.e. pushed.
+    rc = subprocess.call(
+        ["git", "merge-base", "--is-ancestor", head, "origin/main"],
+        cwd=root,
+    )
+    if rc != 0:
+        raise RuntimeError(
+            f"HEAD {head} is not present on origin/main ({origin_main}). "
+            "Push before launching GPU runs."
+        )
+
+    branch = subprocess.check_output(
+        ["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd=root, text=True
+    ).strip()
+    if branch != "main":
+        raise RuntimeError(
+            f"Expected branch main, got {branch!r}. Switch to main before launching."
+        )
+
+    print(f"[provenance] clean tree; HEAD {head} is on origin/main")
+    return head
+
+
 def set_seeds(seed: int = 0) -> None:
     torch.manual_seed(seed)
     np.random.seed(seed)
