@@ -573,6 +573,14 @@ exp_user: Write two sentences about whatever comes to mind.
 mmlu_n: 200
 wikitext_n: 100
 wikitext_chunk_tokens: 64
+mmlu_dataset: cais/mmlu
+mmlu_config: all
+mmlu_split: validation
+mmlu_revision: c30699e8356da336a370243923dbaf21066bb9fe
+wikitext_dataset: Salesforce/wikitext
+wikitext_config: wikitext-103-raw-v1
+wikitext_split: validation
+wikitext_revision: b08601e04326c79dfdd32d625aee71d232d685c3
 bootstrap_resamples: 2000
 bootstrap_seed: 0
 projected_gpu_limit_hours: 1.3

@@ -1,0 +1,26 @@
+{
+  "git_hash": "5ee4d2a498ab81a087279493efbf99528c9fee72",
+  "model_revision": "005ad3404e59d6023443cb575daa05336842228a",
+  "errors": [],
+  "env": {
+    "python": "3.11.12",
+    "torch": "2.14.1+cu126",
+    "transformers": "5.22.1",
+    "cuda": "12.6",
+    "gpu_name": "NVIDIA A100-SXM4-80GB"
+  },
+  "l0_star": 42,
+  "dataset_revisions": {
+    "mmlu_revision": "c30699e8356da336a370243923dbaf21066bb9fe",
+    "wikitext_revision": "b08601e04326c79dfdd32d625aee71d232d685c3"
+  },
+  "mmlu_acc": {
+    "none": 0.765,
+    "B1": 0.76,
+    "B1-null": 0.775
+  },
+  "kl_means": {
+    "B1": 2.492057801485062,
+    "B1-null": 0.016849862239323558
+  }
+}
