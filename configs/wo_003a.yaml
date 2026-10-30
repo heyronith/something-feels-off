@@ -1,0 +1,40 @@
+wo_id: WO-003a
+depends_on_commit: e5cd479
+
+# gates (per-layer exclusion)
+gates:
+  45: [9959, 74631]
+  50: [167]
+
+layers: [45, 50]
+width: 262144
+n_match: 20
+n_m50: 50
+n_boot: 2000
+boot_seed: 0
+n_inspect_concepts: 3
+inspect_sets: [S1, S2, S4, S5]
+inspect_prompt_idx: 0
+inspect_alpha: 4.0
+inspect_top_n: 30
+
+# Yes / No token ids (assert against tokenizer)
+yes_id: 10784
+no_id: 3771
+
+# paths (Modal volume defaults; overridable by CLI)
+wo003_raw: /models/results/WO-003/raw
+wo003_metrics: /models/results/WO-003/metrics.json
+transcoder_root: /models/gemmascope2-27b-it/transcoder_all
+transcoder_subdir: "layer_{layer}_width_262k_l0_big_affine"
+model_dir: /models/gemma-3-27b-it
+
+# DLA key regexes
+unembed_key_re: '^(language_model\\.)?(model\\.)?lm_head\\.weight$'
+tied_embed_key_re: '^(language_model\\.)?model\\.embed_tokens\\.weight$'
+norm_key_re: '^(language_model\\.)?model\\.norm\\.weight$'
+
+# Modal CPU resources (ledger)
+cpu_cores: 8.0
+mem_gib: 64.0
+timeout_sec: 3600
