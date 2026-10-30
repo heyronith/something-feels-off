@@ -16,3 +16,4 @@ PyYAML==6.0.3
 pytest==9.2.0
 modal==1.6.3
 openai==2.8.1
+datasets==3.6.0

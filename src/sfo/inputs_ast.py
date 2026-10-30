@@ -39,6 +39,15 @@ def _grading_prompt_from_criteria(tree: ast.AST, criteria_name: str) -> str:
     raise KeyError(f"{criteria_name} not found")
 
 
+def load_new_concepts(submodule_root: Path) -> List[str]:
+    """Parse NEW_CONCEPTS only from experiments/concepts_list.py via ast.literal_eval."""
+    path = Path(submodule_root) / "experiments" / "concepts_list.py"
+    tree = ast.parse(_module_source(path))
+    concepts = _assign_literal(tree, "NEW_CONCEPTS")
+    assert isinstance(concepts, list)
+    return list(concepts)
+
+
 def load_reference_inputs(submodule_root: Path) -> Dict[str, Any]:
     """
     Read DEFAULT_TEST_CONCEPTS, DEFAULT_BASELINE_WORDS (first 100), and grading prompts
