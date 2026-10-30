@@ -30,7 +30,7 @@ PYTHONPATH=src python scripts/wo_002_metrics.py results/WO-002
 **Total WO-002 GPU billable:** 60.047 + 634.411 + 730.770 + 170.525 = **1595.753 s ≈ 26.6 GPU-min ≈ 0.443 h** (limit 1.3 h).
 
 ## Git hash
-- Final / completion commit: `f3c42292428d5d5149304038bf024b45ed0c7fae` (message: WO-002: Anomaly-direction blocker (B1) — find and validate; this file’s hash line updated in a follow-up commit)
+- Primary completion commit: `f3c42292428d5d5149304038bf024b45ed0c7fae` (`WO-002: Anomaly-direction blocker (B1) — find and validate`)
 - Part A success ledger hash: `d7b3ec98e4820557940d0067f352eb661651153b`
 - Part B generation ledger hash: `7a7b9073e722583802d51701ae90c28f1de5a921`
 - Part B MMLU/KL ledger hash: `5ee4d2a498ab81a087279493efbf99528c9fee72`
