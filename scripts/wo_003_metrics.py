@@ -189,9 +189,12 @@ class Boot:
 
 
 def ci_block(point: float, boots: Optional[np.ndarray]) -> Dict[str, Any]:
+    """WO schema: {m, lo95, hi95, lo9944, hi9944}."""
     if boots is None:
-        return {"mean": point, "ci95": [None, None], "ci99_44": [None, None]}
-    return {"mean": point, "ci95": pct(boots, CI95), "ci99_44": pct(boots, CI9944)}
+        return {"m": point, "lo95": None, "hi95": None, "lo9944": None, "hi9944": None}
+    lo95, hi95 = pct(boots, CI95)
+    lo9944, hi9944 = pct(boots, CI9944)
+    return {"m": point, "lo95": lo95, "hi95": hi95, "lo9944": lo9944, "hi9944": hi9944}
 
 
 # ----------------------------------------------------------------------------------------
@@ -412,16 +415,19 @@ def matched_null_pool(
 ) -> Optional[Dict[str, Any]]:
     """200 features (same layer): same decile of base_active_frac AND of mean base act on S,
     sampled (seed 0) from the active-in-S features; fall back to nearest in percentile space."""
-    act = sp["active"][s]
     nb = sp["n_base"][s]
-    if nb == 0 or not act[gid]:
+    # Spec: features active at baseline on S (not merely active in any steered row).
+    base_active = sp["base_nz"][s] > 0
+    if nb == 0 or not base_active[gid]:
         return None
-    ids = np.flatnonzero(act)
+    ids = np.flatnonzero(base_active)
     frac = sp["base_nz"][s][ids] / nb
     mact = sp["base_sum"][s][ids] / nb
     fe, me = decile_edges(frac), decile_edges(mact)
     fd, md = np.digitize(frac, fe), np.digitize(mact, me)
     pos_g = int(np.searchsorted(ids, gid))
+    if pos_g >= len(ids) or ids[pos_g] != gid:
+        return None
     gfd, gmd = fd[pos_g], md[pos_g]
     cand = np.ones(len(ids), dtype=bool)
     cand[pos_g] = False
@@ -459,8 +465,10 @@ def sparse_gate_metrics(
     if act[gid]:
         d = D[ids]
         g = D[gid]
+        # 0 = most negative among active features (percentile on 0–100 scale).
         out["pct_rank_active"] = float(100.0 * np.mean(d <= g))
-        out["abs_rank"] = int(1 + np.sum(np.abs(d) > abs(g)))
+        # Absolute rank among active: 1 = most negative D_act.
+        out["abs_rank"] = int(1 + np.sum(d < g))
     pool = pools.get((s, gid))
     if pool is not None:
         nb = sp["n_base"][s]
@@ -472,10 +480,9 @@ def sparse_gate_metrics(
         gate_rel = float((M[gid] - B[gid]) / B[gid]) if B[gid] > 0 else None
         q = pct(rel, (25, 50, 75)) if rel.size else [None] * 3
         out["matched_null"] = {
+            "median": q[1], "q25": q[0], "q75": q[2], "gate_rel": gate_rel,
             "n_matched": pool["n_matched"], "n_exact_decile": pool["n_exact_decile"],
             "gate_decile_frac_meanact": pool["gate_decile"], "n_valid_rel": int(ok.sum()),
-            "rel_dact_median": q[1], "rel_dact_q25": q[0], "rel_dact_q75": q[2],
-            "gate_rel": gate_rel,
             "gate_rel_pctl_in_null": (float(100.0 * np.mean(rel <= gate_rel))
                                       if (gate_rel is not None and rel.size) else None),
         }
@@ -496,13 +503,13 @@ def sparse_inspection(sp: Dict[str, Any], s: str, a: float, layer: int,
     gset = set(int(g) for g in gate_ids)
 
     def entry(j: int) -> Dict[str, Any]:
-        return {"feature": int(ids[j]), "D_act": float(D[j]), "base_mean_act": float(bm[j]),
+        return {"id": int(ids[j]), "D_act": float(D[j]), "base_mean": float(bm[j]),
                 "base_active_frac": float(bf[j]), "is_gate": int(ids[j]) in gset}
 
     order = np.argsort(D, kind="stable")
     neg = [entry(int(j)) for j in order[:N_INSPECT] if D[j] < 0]
     pos = [entry(int(j)) for j in order[::-1][:N_INSPECT] if D[j] > 0]
-    return {"n_active": int(len(ids)), "most_negative": neg, "most_positive": pos}
+    return {"n_active": int(len(ids)), "most_neg": neg, "most_pos": pos}
 
 
 # ----------------------------------------------------------------------------------------
@@ -635,14 +642,17 @@ def main(results_dir: Path) -> None:
                         "D_last20": ci_block(nanmean(Ml), boot.means(Ml, s, k)),
                         "noise_floor": nf,
                         "rel_margin": {
-                            "value": D / abs_margin if abs_margin > 0 else None,
-                            "ci95": [v / abs_margin if abs_margin > 0 else None for v in d_blk["ci95"]],
-                            "ci99_44": [v / abs_margin if abs_margin > 0 else None
-                                        for v in d_blk["ci99_44"]],
+                            **{
+                                k2: (None if (v is None or abs_margin <= 0) else v / abs_margin)
+                                for k2, v in d_blk.items()
+                            },
+                            "m": (D / abs_margin) if abs_margin > 0 else None,
                             "denominator_mean_abs_base_margin": abs_margin,
                         },
-                        "direct_frac": {**ci_block(frac, bfrac),
-                                        "mean_direct": nanmean(Md), "mean_dpre": nanmean(Mp)},
+                        "direct_frac": frac,
+                        "direct_frac_ci": ci_block(frac, bfrac),
+                        "mean_direct": nanmean(Md),
+                        "mean_dpre": nanmean(Mp),
                         "mean_cos_wenc_v": nanmean(cos[ci]),
                     })
                     if layer in sparse:
@@ -670,11 +680,12 @@ def main(results_dir: Path) -> None:
                             br = boot_d[(s, a, k, gk)] / boot_d[(ref, a, k, gk)]
                             lg = np.log(np.abs(br))
                         lg = lg[np.isfinite(lg)]
+                        lo95, hi95 = pct(br, CI95)
+                        lo9944, hi9944 = pct(br, CI9944)
                         cell[rname] = {
+                            "m": (d0 / d1) if d1 != 0 else None,
+                            "lo95": lo95, "hi95": hi95, "lo9944": lo9944, "hi9944": hi9944,
                             "ref": ref,
-                            "ratio": d0 / d1 if d1 != 0 else None,
-                            "ci95": pct(br, CI95),
-                            "ci99_44": pct(br, CI9944),
                             "log_abs_ratio_pctl": {
                                 "p0.28": pct(lg, [0.28])[0], "p2.5": pct(lg, [2.5])[0],
                                 "p25": pct(lg, [25])[0], "p50": pct(lg, [50])[0],
@@ -720,8 +731,8 @@ def main(results_dir: Path) -> None:
                 ent: Dict[str, Any] = {
                     "base_ld_mean": nanmean(base_ld),
                     "noise_floor_mean_abs_dld": nf_ld,
-                    "mean_dLD": ci_block(nanmean(M), boot.means(M, s, k)),
-                    "corr_dpre_dld": {},
+                    "dLD": ci_block(nanmean(M), boot.means(M, s, k)),
+                    "corr_dpre_dLD": {},
                 }
                 for gk in gate_keys:
                     key = (s, a, k, gk)
@@ -731,10 +742,12 @@ def main(results_dir: Path) -> None:
                     r = np.full(X.shape[0], np.nan)
                     for pi in range(X.shape[0]):
                         x, y = X[pi], M[pi]
-                        m = np.isfinite(x) & np.isfinite(y)
-                        if m.sum() >= 3 and np.std(x[m]) > 0 and np.std(y[m]) > 0:
-                            r[pi] = float(np.corrcoef(x[m], y[m])[0, 1])
-                    ent["corr_dpre_dld"][gk] = {
+                        msk = np.isfinite(x) & np.isfinite(y)
+                        if msk.sum() >= 3 and np.std(x[msk]) > 0 and np.std(y[msk]) > 0:
+                            r[pi] = float(np.corrcoef(x[msk], y[msk])[0, 1])
+                    # Spec: per-gate Pearson r (mean over prompts); keep CI under *_ci.
+                    ent["corr_dpre_dLD"][gk] = nanmean(r)
+                    ent.setdefault("corr_dpre_dLD_ci", {})[gk] = {
                         **ci_block(nanmean(r), boot.prompt_means(r, s)),
                         "n_prompts_with_corr": int(np.isfinite(r).sum()),
                         "ci_note": "bootstrap over prompts only",
@@ -797,7 +810,11 @@ def main(results_dir: Path) -> None:
         "computed": computed,
     }
 
-    transcoder_rev = (summary.get("transcoder_revision") or os.environ.get("SFO_TRANSCODER_REVISION"))
+    transcoder_rev = summary.get("transcoder_revision") or os.environ.get("SFO_TRANSCODER_REVISION")
+    if not transcoder_rev:
+        trev_path = results_dir / "transcoder_revision.json"
+        if trev_path.exists():
+            transcoder_rev = json.loads(trev_path.read_text()).get("revision")
     batch_size = (summary.get("config") or {}).get("batch_size", cfg.get("batch_size"))
     metrics = {
         "wo_id": "WO-003",
@@ -846,9 +863,9 @@ def make_figures(results_dir: Path, gates: dict, residual: dict, sets: List[str]
     specs = [("concept", a_lo, "C0", -0.2), ("concept", a_hi, "C1", 0.0), ("random", a_hi, "C2", 0.2)]
     for ax, gk in zip(axes[0], gate_keys):
         for k, a, col, off in specs:
-            y = np.array([_nz(_g(gates, s, a, k, gk, "D", "mean")) for s in sets])
-            lo = np.array([_nz(_g(gates, s, a, k, gk, "D", "ci95", 0)) for s in sets])
-            hi = np.array([_nz(_g(gates, s, a, k, gk, "D", "ci95", 1)) for s in sets])
+            y = np.array([_nz(_g(gates, s, a, k, gk, "D", "m")) for s in sets])
+            lo = np.array([_nz(_g(gates, s, a, k, gk, "D", "lo95")) for s in sets])
+            hi = np.array([_nz(_g(gates, s, a, k, gk, "D", "hi95")) for s in sets])
             ax.errorbar(x + off, y, yerr=[np.clip(y - lo, 0, None), np.clip(hi - y, 0, None)],
                         fmt="o", color=col, ms=4, capsize=2, label=f"{k} α={a}")
         nf = np.array([_nz(_g(gates, s, a_hi, "concept", gk, "noise_floor")) for s in sets])
@@ -869,12 +886,12 @@ def make_figures(results_dir: Path, gates: dict, residual: dict, sets: List[str]
         xs, ys, lo99, hi99 = [], [], [], []
         for i, s in enumerate(sets):
             r = _g(gates, s, a_hi, "concept", gk, "R2")
-            if not r or r.get("ratio") is None:
+            if not r or r.get("m") is None:
                 continue
             xs.append(i)
-            ys.append(r["ratio"])
-            lo99.append(_nz(r["ci99_44"][0]))
-            hi99.append(_nz(r["ci99_44"][1]))
+            ys.append(r["m"])
+            lo99.append(_nz(r.get("lo9944")))
+            hi99.append(_nz(r.get("hi9944")))
         ys_a, lo_a, hi_a = np.array(ys), np.array(lo99), np.array(hi99)
         if len(xs):
             ax.errorbar(xs, ys_a, yerr=[np.clip(ys_a - lo_a, 0, None), np.clip(hi_a - ys_a, 0, None)],
@@ -893,14 +910,14 @@ def make_figures(results_dir: Path, gates: dict, residual: dict, sets: List[str]
     # ---- fig_direct_indirect
     fig, axes = plt.subplots(1, ng, figsize=(5.2 * ng, 4.4), squeeze=False)
     for ax, gk in zip(axes[0], gate_keys):
-        px, py, pe = [], [], []
+        px, py = [], []
         for i, s in enumerate(sets):
             c = _g(gates, s, a_hi, "concept", gk)
             if not c:
                 continue
-            dx = _nz(_g(c, "direct_frac", "mean_direct"))
-            dy = _nz(_g(c, "D", "mean"))
-            lo, hi = _nz(_g(c, "D", "ci95", 0)), _nz(_g(c, "D", "ci95", 1))
+            dx = _nz(c.get("mean_direct"))
+            dy = _nz(_g(c, "D", "m"))
+            lo, hi = _nz(_g(c, "D", "lo95")), _nz(_g(c, "D", "hi95"))
             ax.errorbar(dx, dy, yerr=[[max(dy - lo, 0)], [max(hi - dy, 0)]], fmt="o",
                         color=f"C{i % 10}", capsize=2, label=s)
             px.append(dx)
@@ -927,9 +944,9 @@ def make_figures(results_dir: Path, gates: dict, residual: dict, sets: List[str]
     for ax, lk in zip(axes[0], rl):
         for q, col, off in (("reach", "C0", -0.15), ("reach_indirect", "C3", 0.15)):
             for k, filled in (("concept", True), ("random", False)):
-                y = np.array([_nz(_g(residual, s, a_hi, k, lk, q, "mean")) for s in sets])
-                lo = np.array([_nz(_g(residual, s, a_hi, k, lk, q, "ci95", 0)) for s in sets])
-                hi = np.array([_nz(_g(residual, s, a_hi, k, lk, q, "ci95", 1)) for s in sets])
+                y = np.array([_nz(_g(residual, s, a_hi, k, lk, q, "m")) for s in sets])
+                lo = np.array([_nz(_g(residual, s, a_hi, k, lk, q, "lo95")) for s in sets])
+                hi = np.array([_nz(_g(residual, s, a_hi, k, lk, q, "hi95")) for s in sets])
                 dx = off + (0.0 if filled else 0.07)
                 ax.errorbar(x + dx, y, yerr=[np.clip(y - lo, 0, None), np.clip(hi - y, 0, None)],
                             fmt="o" if filled else "s", mfc=col if filled else "none", color=col,

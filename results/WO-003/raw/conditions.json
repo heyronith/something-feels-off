@@ -1,0 +1,1469 @@
+{
+  "baseline": {
+    "class": "baseline",
+    "alpha": 0.0,
+    "norm": 0.0,
+    "batch_slot": {
+      "chunk": 0,
+      "slot": 0
+    }
+  },
+  "concept__Dust__a2": {
+    "class": "concept",
+    "alpha": 2.0,
+    "norm": 9959.34765625,
+    "batch_slot": {
+      "chunk": 0,
+      "slot": 1
+    },
+    "concept": "Dust"
+  },
+  "concept__Satellites__a2": {
+    "class": "concept",
+    "alpha": 2.0,
+    "norm": 6964.8876953125,
+    "batch_slot": {
+      "chunk": 0,
+      "slot": 2
+    },
+    "concept": "Satellites"
+  },
+  "concept__Trumpets__a2": {
+    "class": "concept",
+    "alpha": 2.0,
+    "norm": 7201.82080078125,
+    "batch_slot": {
+      "chunk": 0,
+      "slot": 3
+    },
+    "concept": "Trumpets"
+  },
+  "concept__Origami__a2": {
+    "class": "concept",
+    "alpha": 2.0,
+    "norm": 9108.30078125,
+    "batch_slot": {
+      "chunk": 0,
+      "slot": 4
+    },
+    "concept": "Origami"
+  },
+  "concept__Illusions__a2": {
+    "class": "concept",
+    "alpha": 2.0,
+    "norm": 7148.8037109375,
+    "batch_slot": {
+      "chunk": 0,
+      "slot": 5
+    },
+    "concept": "Illusions"
+  },
+  "concept__Cameras__a2": {
+    "class": "concept",
+    "alpha": 2.0,
+    "norm": 8956.7939453125,
+    "batch_slot": {
+      "chunk": 0,
+      "slot": 6
+    },
+    "concept": "Cameras"
+  },
+  "concept__Lightning__a2": {
+    "class": "concept",
+    "alpha": 2.0,
+    "norm": 6868.87109375,
+    "batch_slot": {
+      "chunk": 0,
+      "slot": 7
+    },
+    "concept": "Lightning"
+  },
+  "concept__Constellations__a2": {
+    "class": "concept",
+    "alpha": 2.0,
+    "norm": 6811.7158203125,
+    "batch_slot": {
+      "chunk": 0,
+      "slot": 8
+    },
+    "concept": "Constellations"
+  },
+  "concept__Treasures__a2": {
+    "class": "concept",
+    "alpha": 2.0,
+    "norm": 13360.943359375,
+    "batch_slot": {
+      "chunk": 0,
+      "slot": 9
+    },
+    "concept": "Treasures"
+  },
+  "concept__Phones__a2": {
+    "class": "concept",
+    "alpha": 2.0,
+    "norm": 9917.5185546875,
+    "batch_slot": {
+      "chunk": 0,
+      "slot": 10
+    },
+    "concept": "Phones"
+  },
+  "concept__Trees__a2": {
+    "class": "concept",
+    "alpha": 2.0,
+    "norm": 8398.72265625,
+    "batch_slot": {
+      "chunk": 0,
+      "slot": 11
+    },
+    "concept": "Trees"
+  },
+  "concept__Avalanches__a2": {
+    "class": "concept",
+    "alpha": 2.0,
+    "norm": 8520.71484375,
+    "batch_slot": {
+      "chunk": 0,
+      "slot": 12
+    },
+    "concept": "Avalanches"
+  },
+  "concept__Mirrors__a2": {
+    "class": "concept",
+    "alpha": 2.0,
+    "norm": 6597.78662109375,
+    "batch_slot": {
+      "chunk": 0,
+      "slot": 13
+    },
+    "concept": "Mirrors"
+  },
+  "concept__Fountains__a2": {
+    "class": "concept",
+    "alpha": 2.0,
+    "norm": 5381.49658203125,
+    "batch_slot": {
+      "chunk": 0,
+      "slot": 14
+    },
+    "concept": "Fountains"
+  },
+  "concept__Quarries__a2": {
+    "class": "concept",
+    "alpha": 2.0,
+    "norm": 7792.82958984375,
+    "batch_slot": {
+      "chunk": 0,
+      "slot": 15
+    },
+    "concept": "Quarries"
+  },
+  "concept__Sadness__a2": {
+    "class": "concept",
+    "alpha": 2.0,
+    "norm": 12615.763671875,
+    "batch_slot": {
+      "chunk": 0,
+      "slot": 16
+    },
+    "concept": "Sadness"
+  },
+  "concept__Xylophones__a2": {
+    "class": "concept",
+    "alpha": 2.0,
+    "norm": 8325.0888671875,
+    "batch_slot": {
+      "chunk": 0,
+      "slot": 17
+    },
+    "concept": "Xylophones"
+  },
+  "concept__Secrecy__a2": {
+    "class": "concept",
+    "alpha": 2.0,
+    "norm": 8651.486328125,
+    "batch_slot": {
+      "chunk": 0,
+      "slot": 18
+    },
+    "concept": "Secrecy"
+  },
+  "concept__Oceans__a2": {
+    "class": "concept",
+    "alpha": 2.0,
+    "norm": 8696.3408203125,
+    "batch_slot": {
+      "chunk": 0,
+      "slot": 19
+    },
+    "concept": "Oceans"
+  },
+  "concept__Happiness__a2": {
+    "class": "concept",
+    "alpha": 2.0,
+    "norm": 14282.4013671875,
+    "batch_slot": {
+      "chunk": 0,
+      "slot": 20
+    },
+    "concept": "Happiness"
+  },
+  "concept__Deserts__a2": {
+    "class": "concept",
+    "alpha": 2.0,
+    "norm": 7560.67529296875,
+    "batch_slot": {
+      "chunk": 0,
+      "slot": 21
+    },
+    "concept": "Deserts"
+  },
+  "concept__Kaleidoscopes__a2": {
+    "class": "concept",
+    "alpha": 2.0,
+    "norm": 8845.212890625,
+    "batch_slot": {
+      "chunk": 0,
+      "slot": 22
+    },
+    "concept": "Kaleidoscopes"
+  },
+  "concept__Sugar__a2": {
+    "class": "concept",
+    "alpha": 2.0,
+    "norm": 7557.87451171875,
+    "batch_slot": {
+      "chunk": 0,
+      "slot": 23
+    },
+    "concept": "Sugar"
+  },
+  "concept__Vegetables__a2": {
+    "class": "concept",
+    "alpha": 2.0,
+    "norm": 7919.625,
+    "batch_slot": {
+      "chunk": 1,
+      "slot": 0
+    },
+    "concept": "Vegetables"
+  },
+  "concept__Poetry__a2": {
+    "class": "concept",
+    "alpha": 2.0,
+    "norm": 8096.98974609375,
+    "batch_slot": {
+      "chunk": 1,
+      "slot": 1
+    },
+    "concept": "Poetry"
+  },
+  "concept__Aquariums__a2": {
+    "class": "concept",
+    "alpha": 2.0,
+    "norm": 6724.35888671875,
+    "batch_slot": {
+      "chunk": 1,
+      "slot": 2
+    },
+    "concept": "Aquariums"
+  },
+  "concept__Bags__a2": {
+    "class": "concept",
+    "alpha": 2.0,
+    "norm": 9026.703125,
+    "batch_slot": {
+      "chunk": 1,
+      "slot": 3
+    },
+    "concept": "Bags"
+  },
+  "concept__Peace__a2": {
+    "class": "concept",
+    "alpha": 2.0,
+    "norm": 11662.6171875,
+    "batch_slot": {
+      "chunk": 1,
+      "slot": 4
+    },
+    "concept": "Peace"
+  },
+  "concept__Caverns__a2": {
+    "class": "concept",
+    "alpha": 2.0,
+    "norm": 8939.544921875,
+    "batch_slot": {
+      "chunk": 1,
+      "slot": 5
+    },
+    "concept": "Caverns"
+  },
+  "concept__Memories__a2": {
+    "class": "concept",
+    "alpha": 2.0,
+    "norm": 7997.6962890625,
+    "batch_slot": {
+      "chunk": 1,
+      "slot": 6
+    },
+    "concept": "Memories"
+  },
+  "concept__Frosts__a2": {
+    "class": "concept",
+    "alpha": 2.0,
+    "norm": 13837.6689453125,
+    "batch_slot": {
+      "chunk": 1,
+      "slot": 7
+    },
+    "concept": "Frosts"
+  },
+  "concept__Volcanoes__a2": {
+    "class": "concept",
+    "alpha": 2.0,
+    "norm": 8232.85546875,
+    "batch_slot": {
+      "chunk": 1,
+      "slot": 8
+    },
+    "concept": "Volcanoes"
+  },
+  "concept__Boulders__a2": {
+    "class": "concept",
+    "alpha": 2.0,
+    "norm": 7212.23974609375,
+    "batch_slot": {
+      "chunk": 1,
+      "slot": 9
+    },
+    "concept": "Boulders"
+  },
+  "concept__Harmonies__a2": {
+    "class": "concept",
+    "alpha": 2.0,
+    "norm": 7420.322265625,
+    "batch_slot": {
+      "chunk": 1,
+      "slot": 10
+    },
+    "concept": "Harmonies"
+  },
+  "concept__Masquerades__a2": {
+    "class": "concept",
+    "alpha": 2.0,
+    "norm": 8158.294921875,
+    "batch_slot": {
+      "chunk": 1,
+      "slot": 11
+    },
+    "concept": "Masquerades"
+  },
+  "concept__Rubber__a2": {
+    "class": "concept",
+    "alpha": 2.0,
+    "norm": 6031.91943359375,
+    "batch_slot": {
+      "chunk": 1,
+      "slot": 12
+    },
+    "concept": "Rubber"
+  },
+  "concept__Plastic__a2": {
+    "class": "concept",
+    "alpha": 2.0,
+    "norm": 6792.64111328125,
+    "batch_slot": {
+      "chunk": 1,
+      "slot": 13
+    },
+    "concept": "Plastic"
+  },
+  "concept__Blood__a2": {
+    "class": "concept",
+    "alpha": 2.0,
+    "norm": 8403.724609375,
+    "batch_slot": {
+      "chunk": 1,
+      "slot": 14
+    },
+    "concept": "Blood"
+  },
+  "concept__Amphitheaters__a2": {
+    "class": "concept",
+    "alpha": 2.0,
+    "norm": 7954.4775390625,
+    "batch_slot": {
+      "chunk": 1,
+      "slot": 15
+    },
+    "concept": "Amphitheaters"
+  },
+  "concept__Contraptions__a2": {
+    "class": "concept",
+    "alpha": 2.0,
+    "norm": 12160.5869140625,
+    "batch_slot": {
+      "chunk": 1,
+      "slot": 16
+    },
+    "concept": "Contraptions"
+  },
+  "concept__Youths__a2": {
+    "class": "concept",
+    "alpha": 2.0,
+    "norm": 11037.7353515625,
+    "batch_slot": {
+      "chunk": 1,
+      "slot": 17
+    },
+    "concept": "Youths"
+  },
+  "concept__Dynasties__a2": {
+    "class": "concept",
+    "alpha": 2.0,
+    "norm": 11796.693359375,
+    "batch_slot": {
+      "chunk": 1,
+      "slot": 18
+    },
+    "concept": "Dynasties"
+  },
+  "concept__Snow__a2": {
+    "class": "concept",
+    "alpha": 2.0,
+    "norm": 7881.0927734375,
+    "batch_slot": {
+      "chunk": 1,
+      "slot": 19
+    },
+    "concept": "Snow"
+  },
+  "concept__Dirigibles__a2": {
+    "class": "concept",
+    "alpha": 2.0,
+    "norm": 8809.55859375,
+    "batch_slot": {
+      "chunk": 1,
+      "slot": 20
+    },
+    "concept": "Dirigibles"
+  },
+  "concept__Algorithms__a2": {
+    "class": "concept",
+    "alpha": 2.0,
+    "norm": 9014.4990234375,
+    "batch_slot": {
+      "chunk": 1,
+      "slot": 21
+    },
+    "concept": "Algorithms"
+  },
+  "concept__Denim__a2": {
+    "class": "concept",
+    "alpha": 2.0,
+    "norm": 6873.48095703125,
+    "batch_slot": {
+      "chunk": 1,
+      "slot": 22
+    },
+    "concept": "Denim"
+  },
+  "concept__Monoliths__a2": {
+    "class": "concept",
+    "alpha": 2.0,
+    "norm": 7622.72021484375,
+    "batch_slot": {
+      "chunk": 1,
+      "slot": 23
+    },
+    "concept": "Monoliths"
+  },
+  "concept__Milk__a2": {
+    "class": "concept",
+    "alpha": 2.0,
+    "norm": 7391.3134765625,
+    "batch_slot": {
+      "chunk": 2,
+      "slot": 0
+    },
+    "concept": "Milk"
+  },
+  "concept__Bread__a2": {
+    "class": "concept",
+    "alpha": 2.0,
+    "norm": 8827.6728515625,
+    "batch_slot": {
+      "chunk": 2,
+      "slot": 1
+    },
+    "concept": "Bread"
+  },
+  "concept__Silver__a2": {
+    "class": "concept",
+    "alpha": 2.0,
+    "norm": 8705.4912109375,
+    "batch_slot": {
+      "chunk": 2,
+      "slot": 2
+    },
+    "concept": "Silver"
+  },
+  "concept__Dust__a4": {
+    "class": "concept",
+    "alpha": 4.0,
+    "norm": 19918.6953125,
+    "batch_slot": {
+      "chunk": 2,
+      "slot": 3
+    },
+    "concept": "Dust"
+  },
+  "concept__Satellites__a4": {
+    "class": "concept",
+    "alpha": 4.0,
+    "norm": 13929.775390625,
+    "batch_slot": {
+      "chunk": 2,
+      "slot": 4
+    },
+    "concept": "Satellites"
+  },
+  "concept__Trumpets__a4": {
+    "class": "concept",
+    "alpha": 4.0,
+    "norm": 14403.6416015625,
+    "batch_slot": {
+      "chunk": 2,
+      "slot": 5
+    },
+    "concept": "Trumpets"
+  },
+  "concept__Origami__a4": {
+    "class": "concept",
+    "alpha": 4.0,
+    "norm": 18216.6015625,
+    "batch_slot": {
+      "chunk": 2,
+      "slot": 6
+    },
+    "concept": "Origami"
+  },
+  "concept__Illusions__a4": {
+    "class": "concept",
+    "alpha": 4.0,
+    "norm": 14297.607421875,
+    "batch_slot": {
+      "chunk": 2,
+      "slot": 7
+    },
+    "concept": "Illusions"
+  },
+  "concept__Cameras__a4": {
+    "class": "concept",
+    "alpha": 4.0,
+    "norm": 17913.587890625,
+    "batch_slot": {
+      "chunk": 2,
+      "slot": 8
+    },
+    "concept": "Cameras"
+  },
+  "concept__Lightning__a4": {
+    "class": "concept",
+    "alpha": 4.0,
+    "norm": 13737.7421875,
+    "batch_slot": {
+      "chunk": 2,
+      "slot": 9
+    },
+    "concept": "Lightning"
+  },
+  "concept__Constellations__a4": {
+    "class": "concept",
+    "alpha": 4.0,
+    "norm": 13623.431640625,
+    "batch_slot": {
+      "chunk": 2,
+      "slot": 10
+    },
+    "concept": "Constellations"
+  },
+  "concept__Treasures__a4": {
+    "class": "concept",
+    "alpha": 4.0,
+    "norm": 26721.88671875,
+    "batch_slot": {
+      "chunk": 2,
+      "slot": 11
+    },
+    "concept": "Treasures"
+  },
+  "concept__Phones__a4": {
+    "class": "concept",
+    "alpha": 4.0,
+    "norm": 19835.037109375,
+    "batch_slot": {
+      "chunk": 2,
+      "slot": 12
+    },
+    "concept": "Phones"
+  },
+  "concept__Trees__a4": {
+    "class": "concept",
+    "alpha": 4.0,
+    "norm": 16797.4453125,
+    "batch_slot": {
+      "chunk": 2,
+      "slot": 13
+    },
+    "concept": "Trees"
+  },
+  "concept__Avalanches__a4": {
+    "class": "concept",
+    "alpha": 4.0,
+    "norm": 17041.4296875,
+    "batch_slot": {
+      "chunk": 2,
+      "slot": 14
+    },
+    "concept": "Avalanches"
+  },
+  "concept__Mirrors__a4": {
+    "class": "concept",
+    "alpha": 4.0,
+    "norm": 13195.5732421875,
+    "batch_slot": {
+      "chunk": 2,
+      "slot": 15
+    },
+    "concept": "Mirrors"
+  },
+  "concept__Fountains__a4": {
+    "class": "concept",
+    "alpha": 4.0,
+    "norm": 10762.9931640625,
+    "batch_slot": {
+      "chunk": 2,
+      "slot": 16
+    },
+    "concept": "Fountains"
+  },
+  "concept__Quarries__a4": {
+    "class": "concept",
+    "alpha": 4.0,
+    "norm": 15585.6591796875,
+    "batch_slot": {
+      "chunk": 2,
+      "slot": 17
+    },
+    "concept": "Quarries"
+  },
+  "concept__Sadness__a4": {
+    "class": "concept",
+    "alpha": 4.0,
+    "norm": 25231.52734375,
+    "batch_slot": {
+      "chunk": 2,
+      "slot": 18
+    },
+    "concept": "Sadness"
+  },
+  "concept__Xylophones__a4": {
+    "class": "concept",
+    "alpha": 4.0,
+    "norm": 16650.177734375,
+    "batch_slot": {
+      "chunk": 2,
+      "slot": 19
+    },
+    "concept": "Xylophones"
+  },
+  "concept__Secrecy__a4": {
+    "class": "concept",
+    "alpha": 4.0,
+    "norm": 17302.97265625,
+    "batch_slot": {
+      "chunk": 2,
+      "slot": 20
+    },
+    "concept": "Secrecy"
+  },
+  "concept__Oceans__a4": {
+    "class": "concept",
+    "alpha": 4.0,
+    "norm": 17392.681640625,
+    "batch_slot": {
+      "chunk": 2,
+      "slot": 21
+    },
+    "concept": "Oceans"
+  },
+  "concept__Happiness__a4": {
+    "class": "concept",
+    "alpha": 4.0,
+    "norm": 28564.802734375,
+    "batch_slot": {
+      "chunk": 2,
+      "slot": 22
+    },
+    "concept": "Happiness"
+  },
+  "concept__Deserts__a4": {
+    "class": "concept",
+    "alpha": 4.0,
+    "norm": 15121.3505859375,
+    "batch_slot": {
+      "chunk": 2,
+      "slot": 23
+    },
+    "concept": "Deserts"
+  },
+  "noise_floor_1": {
+    "class": "noise_floor",
+    "alpha": 0.0,
+    "norm": 0.0,
+    "batch_slot": {
+      "chunk": 3,
+      "slot": 0
+    }
+  },
+  "concept__Kaleidoscopes__a4": {
+    "class": "concept",
+    "alpha": 4.0,
+    "norm": 17690.42578125,
+    "batch_slot": {
+      "chunk": 3,
+      "slot": 1
+    },
+    "concept": "Kaleidoscopes"
+  },
+  "concept__Sugar__a4": {
+    "class": "concept",
+    "alpha": 4.0,
+    "norm": 15115.7490234375,
+    "batch_slot": {
+      "chunk": 3,
+      "slot": 2
+    },
+    "concept": "Sugar"
+  },
+  "concept__Vegetables__a4": {
+    "class": "concept",
+    "alpha": 4.0,
+    "norm": 15839.25,
+    "batch_slot": {
+      "chunk": 3,
+      "slot": 3
+    },
+    "concept": "Vegetables"
+  },
+  "concept__Poetry__a4": {
+    "class": "concept",
+    "alpha": 4.0,
+    "norm": 16193.9794921875,
+    "batch_slot": {
+      "chunk": 3,
+      "slot": 4
+    },
+    "concept": "Poetry"
+  },
+  "concept__Aquariums__a4": {
+    "class": "concept",
+    "alpha": 4.0,
+    "norm": 13448.7177734375,
+    "batch_slot": {
+      "chunk": 3,
+      "slot": 5
+    },
+    "concept": "Aquariums"
+  },
+  "concept__Bags__a4": {
+    "class": "concept",
+    "alpha": 4.0,
+    "norm": 18053.40625,
+    "batch_slot": {
+      "chunk": 3,
+      "slot": 6
+    },
+    "concept": "Bags"
+  },
+  "concept__Peace__a4": {
+    "class": "concept",
+    "alpha": 4.0,
+    "norm": 23325.234375,
+    "batch_slot": {
+      "chunk": 3,
+      "slot": 7
+    },
+    "concept": "Peace"
+  },
+  "concept__Caverns__a4": {
+    "class": "concept",
+    "alpha": 4.0,
+    "norm": 17879.08984375,
+    "batch_slot": {
+      "chunk": 3,
+      "slot": 8
+    },
+    "concept": "Caverns"
+  },
+  "concept__Memories__a4": {
+    "class": "concept",
+    "alpha": 4.0,
+    "norm": 15995.392578125,
+    "batch_slot": {
+      "chunk": 3,
+      "slot": 9
+    },
+    "concept": "Memories"
+  },
+  "concept__Frosts__a4": {
+    "class": "concept",
+    "alpha": 4.0,
+    "norm": 27675.337890625,
+    "batch_slot": {
+      "chunk": 3,
+      "slot": 10
+    },
+    "concept": "Frosts"
+  },
+  "concept__Volcanoes__a4": {
+    "class": "concept",
+    "alpha": 4.0,
+    "norm": 16465.7109375,
+    "batch_slot": {
+      "chunk": 3,
+      "slot": 11
+    },
+    "concept": "Volcanoes"
+  },
+  "concept__Boulders__a4": {
+    "class": "concept",
+    "alpha": 4.0,
+    "norm": 14424.4794921875,
+    "batch_slot": {
+      "chunk": 3,
+      "slot": 12
+    },
+    "concept": "Boulders"
+  },
+  "concept__Harmonies__a4": {
+    "class": "concept",
+    "alpha": 4.0,
+    "norm": 14840.64453125,
+    "batch_slot": {
+      "chunk": 3,
+      "slot": 13
+    },
+    "concept": "Harmonies"
+  },
+  "concept__Masquerades__a4": {
+    "class": "concept",
+    "alpha": 4.0,
+    "norm": 16316.58984375,
+    "batch_slot": {
+      "chunk": 3,
+      "slot": 14
+    },
+    "concept": "Masquerades"
+  },
+  "concept__Rubber__a4": {
+    "class": "concept",
+    "alpha": 4.0,
+    "norm": 12063.8388671875,
+    "batch_slot": {
+      "chunk": 3,
+      "slot": 15
+    },
+    "concept": "Rubber"
+  },
+  "concept__Plastic__a4": {
+    "class": "concept",
+    "alpha": 4.0,
+    "norm": 13585.2822265625,
+    "batch_slot": {
+      "chunk": 3,
+      "slot": 16
+    },
+    "concept": "Plastic"
+  },
+  "concept__Blood__a4": {
+    "class": "concept",
+    "alpha": 4.0,
+    "norm": 16807.44921875,
+    "batch_slot": {
+      "chunk": 3,
+      "slot": 17
+    },
+    "concept": "Blood"
+  },
+  "concept__Amphitheaters__a4": {
+    "class": "concept",
+    "alpha": 4.0,
+    "norm": 15908.955078125,
+    "batch_slot": {
+      "chunk": 3,
+      "slot": 18
+    },
+    "concept": "Amphitheaters"
+  },
+  "concept__Contraptions__a4": {
+    "class": "concept",
+    "alpha": 4.0,
+    "norm": 24321.173828125,
+    "batch_slot": {
+      "chunk": 3,
+      "slot": 19
+    },
+    "concept": "Contraptions"
+  },
+  "concept__Youths__a4": {
+    "class": "concept",
+    "alpha": 4.0,
+    "norm": 22075.470703125,
+    "batch_slot": {
+      "chunk": 3,
+      "slot": 20
+    },
+    "concept": "Youths"
+  },
+  "concept__Dynasties__a4": {
+    "class": "concept",
+    "alpha": 4.0,
+    "norm": 23593.38671875,
+    "batch_slot": {
+      "chunk": 3,
+      "slot": 21
+    },
+    "concept": "Dynasties"
+  },
+  "concept__Snow__a4": {
+    "class": "concept",
+    "alpha": 4.0,
+    "norm": 15762.185546875,
+    "batch_slot": {
+      "chunk": 3,
+      "slot": 22
+    },
+    "concept": "Snow"
+  },
+  "concept__Dirigibles__a4": {
+    "class": "concept",
+    "alpha": 4.0,
+    "norm": 17619.1171875,
+    "batch_slot": {
+      "chunk": 3,
+      "slot": 23
+    },
+    "concept": "Dirigibles"
+  },
+  "concept__Algorithms__a4": {
+    "class": "concept",
+    "alpha": 4.0,
+    "norm": 18028.998046875,
+    "batch_slot": {
+      "chunk": 4,
+      "slot": 0
+    },
+    "concept": "Algorithms"
+  },
+  "concept__Denim__a4": {
+    "class": "concept",
+    "alpha": 4.0,
+    "norm": 13746.9619140625,
+    "batch_slot": {
+      "chunk": 4,
+      "slot": 1
+    },
+    "concept": "Denim"
+  },
+  "concept__Monoliths__a4": {
+    "class": "concept",
+    "alpha": 4.0,
+    "norm": 15245.4404296875,
+    "batch_slot": {
+      "chunk": 4,
+      "slot": 2
+    },
+    "concept": "Monoliths"
+  },
+  "concept__Milk__a4": {
+    "class": "concept",
+    "alpha": 4.0,
+    "norm": 14782.626953125,
+    "batch_slot": {
+      "chunk": 4,
+      "slot": 3
+    },
+    "concept": "Milk"
+  },
+  "concept__Bread__a4": {
+    "class": "concept",
+    "alpha": 4.0,
+    "norm": 17655.345703125,
+    "batch_slot": {
+      "chunk": 4,
+      "slot": 4
+    },
+    "concept": "Bread"
+  },
+  "concept__Silver__a4": {
+    "class": "concept",
+    "alpha": 4.0,
+    "norm": 17410.982421875,
+    "batch_slot": {
+      "chunk": 4,
+      "slot": 5
+    },
+    "concept": "Silver"
+  },
+  "random__s100__a2": {
+    "class": "random",
+    "alpha": 2.0,
+    "norm": 9959.3486328125,
+    "batch_slot": {
+      "chunk": 4,
+      "slot": 6
+    },
+    "seed": 100,
+    "matched_concept": "Dust"
+  },
+  "random__s101__a2": {
+    "class": "random",
+    "alpha": 2.0,
+    "norm": 6964.8876953125,
+    "batch_slot": {
+      "chunk": 4,
+      "slot": 7
+    },
+    "seed": 101,
+    "matched_concept": "Satellites"
+  },
+  "random__s102__a2": {
+    "class": "random",
+    "alpha": 2.0,
+    "norm": 7201.8212890625,
+    "batch_slot": {
+      "chunk": 4,
+      "slot": 8
+    },
+    "seed": 102,
+    "matched_concept": "Trumpets"
+  },
+  "random__s103__a2": {
+    "class": "random",
+    "alpha": 2.0,
+    "norm": 9108.30078125,
+    "batch_slot": {
+      "chunk": 4,
+      "slot": 9
+    },
+    "seed": 103,
+    "matched_concept": "Origami"
+  },
+  "random__s104__a2": {
+    "class": "random",
+    "alpha": 2.0,
+    "norm": 7148.80419921875,
+    "batch_slot": {
+      "chunk": 4,
+      "slot": 10
+    },
+    "seed": 104,
+    "matched_concept": "Illusions"
+  },
+  "random__s105__a2": {
+    "class": "random",
+    "alpha": 2.0,
+    "norm": 8956.7919921875,
+    "batch_slot": {
+      "chunk": 4,
+      "slot": 11
+    },
+    "seed": 105,
+    "matched_concept": "Cameras"
+  },
+  "random__s106__a2": {
+    "class": "random",
+    "alpha": 2.0,
+    "norm": 6868.87109375,
+    "batch_slot": {
+      "chunk": 4,
+      "slot": 12
+    },
+    "seed": 106,
+    "matched_concept": "Lightning"
+  },
+  "random__s107__a2": {
+    "class": "random",
+    "alpha": 2.0,
+    "norm": 6811.716796875,
+    "batch_slot": {
+      "chunk": 4,
+      "slot": 13
+    },
+    "seed": 107,
+    "matched_concept": "Constellations"
+  },
+  "random__s108__a2": {
+    "class": "random",
+    "alpha": 2.0,
+    "norm": 13360.947265625,
+    "batch_slot": {
+      "chunk": 4,
+      "slot": 14
+    },
+    "seed": 108,
+    "matched_concept": "Treasures"
+  },
+  "random__s109__a2": {
+    "class": "random",
+    "alpha": 2.0,
+    "norm": 9917.5185546875,
+    "batch_slot": {
+      "chunk": 4,
+      "slot": 15
+    },
+    "seed": 109,
+    "matched_concept": "Phones"
+  },
+  "random__s110__a2": {
+    "class": "random",
+    "alpha": 2.0,
+    "norm": 8398.72265625,
+    "batch_slot": {
+      "chunk": 4,
+      "slot": 16
+    },
+    "seed": 110,
+    "matched_concept": "Trees"
+  },
+  "random__s111__a2": {
+    "class": "random",
+    "alpha": 2.0,
+    "norm": 8520.7158203125,
+    "batch_slot": {
+      "chunk": 4,
+      "slot": 17
+    },
+    "seed": 111,
+    "matched_concept": "Avalanches"
+  },
+  "random__s112__a2": {
+    "class": "random",
+    "alpha": 2.0,
+    "norm": 6597.7861328125,
+    "batch_slot": {
+      "chunk": 4,
+      "slot": 18
+    },
+    "seed": 112,
+    "matched_concept": "Mirrors"
+  },
+  "random__s113__a2": {
+    "class": "random",
+    "alpha": 2.0,
+    "norm": 5381.49609375,
+    "batch_slot": {
+      "chunk": 4,
+      "slot": 19
+    },
+    "seed": 113,
+    "matched_concept": "Fountains"
+  },
+  "random__s114__a2": {
+    "class": "random",
+    "alpha": 2.0,
+    "norm": 7792.83056640625,
+    "batch_slot": {
+      "chunk": 4,
+      "slot": 20
+    },
+    "seed": 114,
+    "matched_concept": "Quarries"
+  },
+  "random__s115__a2": {
+    "class": "random",
+    "alpha": 2.0,
+    "norm": 12615.76171875,
+    "batch_slot": {
+      "chunk": 4,
+      "slot": 21
+    },
+    "seed": 115,
+    "matched_concept": "Sadness"
+  },
+  "random__s116__a2": {
+    "class": "random",
+    "alpha": 2.0,
+    "norm": 8325.087890625,
+    "batch_slot": {
+      "chunk": 4,
+      "slot": 22
+    },
+    "seed": 116,
+    "matched_concept": "Xylophones"
+  },
+  "random__s117__a2": {
+    "class": "random",
+    "alpha": 2.0,
+    "norm": 8651.486328125,
+    "batch_slot": {
+      "chunk": 4,
+      "slot": 23
+    },
+    "seed": 117,
+    "matched_concept": "Secrecy"
+  },
+  "random__s118__a2": {
+    "class": "random",
+    "alpha": 2.0,
+    "norm": 8696.3408203125,
+    "batch_slot": {
+      "chunk": 5,
+      "slot": 0
+    },
+    "seed": 118,
+    "matched_concept": "Oceans"
+  },
+  "random__s119__a2": {
+    "class": "random",
+    "alpha": 2.0,
+    "norm": 14282.4013671875,
+    "batch_slot": {
+      "chunk": 5,
+      "slot": 1
+    },
+    "seed": 119,
+    "matched_concept": "Happiness"
+  },
+  "random__s100__a4": {
+    "class": "random",
+    "alpha": 4.0,
+    "norm": 19918.697265625,
+    "batch_slot": {
+      "chunk": 5,
+      "slot": 2
+    },
+    "seed": 100,
+    "matched_concept": "Dust"
+  },
+  "random__s101__a4": {
+    "class": "random",
+    "alpha": 4.0,
+    "norm": 13929.775390625,
+    "batch_slot": {
+      "chunk": 5,
+      "slot": 3
+    },
+    "seed": 101,
+    "matched_concept": "Satellites"
+  },
+  "random__s102__a4": {
+    "class": "random",
+    "alpha": 4.0,
+    "norm": 14403.642578125,
+    "batch_slot": {
+      "chunk": 5,
+      "slot": 4
+    },
+    "seed": 102,
+    "matched_concept": "Trumpets"
+  },
+  "random__s103__a4": {
+    "class": "random",
+    "alpha": 4.0,
+    "norm": 18216.6015625,
+    "batch_slot": {
+      "chunk": 5,
+      "slot": 5
+    },
+    "seed": 103,
+    "matched_concept": "Origami"
+  },
+  "random__s104__a4": {
+    "class": "random",
+    "alpha": 4.0,
+    "norm": 14297.6083984375,
+    "batch_slot": {
+      "chunk": 5,
+      "slot": 6
+    },
+    "seed": 104,
+    "matched_concept": "Illusions"
+  },
+  "random__s105__a4": {
+    "class": "random",
+    "alpha": 4.0,
+    "norm": 17913.583984375,
+    "batch_slot": {
+      "chunk": 5,
+      "slot": 7
+    },
+    "seed": 105,
+    "matched_concept": "Cameras"
+  },
+  "random__s106__a4": {
+    "class": "random",
+    "alpha": 4.0,
+    "norm": 13737.7421875,
+    "batch_slot": {
+      "chunk": 5,
+      "slot": 8
+    },
+    "seed": 106,
+    "matched_concept": "Lightning"
+  },
+  "random__s107__a4": {
+    "class": "random",
+    "alpha": 4.0,
+    "norm": 13623.43359375,
+    "batch_slot": {
+      "chunk": 5,
+      "slot": 9
+    },
+    "seed": 107,
+    "matched_concept": "Constellations"
+  },
+  "random__s108__a4": {
+    "class": "random",
+    "alpha": 4.0,
+    "norm": 26721.89453125,
+    "batch_slot": {
+      "chunk": 5,
+      "slot": 10
+    },
+    "seed": 108,
+    "matched_concept": "Treasures"
+  },
+  "random__s109__a4": {
+    "class": "random",
+    "alpha": 4.0,
+    "norm": 19835.037109375,
+    "batch_slot": {
+      "chunk": 5,
+      "slot": 11
+    },
+    "seed": 109,
+    "matched_concept": "Phones"
+  },
+  "random__s110__a4": {
+    "class": "random",
+    "alpha": 4.0,
+    "norm": 16797.4453125,
+    "batch_slot": {
+      "chunk": 5,
+      "slot": 12
+    },
+    "seed": 110,
+    "matched_concept": "Trees"
+  },
+  "random__s111__a4": {
+    "class": "random",
+    "alpha": 4.0,
+    "norm": 17041.431640625,
+    "batch_slot": {
+      "chunk": 5,
+      "slot": 13
+    },
+    "seed": 111,
+    "matched_concept": "Avalanches"
+  },
+  "random__s112__a4": {
+    "class": "random",
+    "alpha": 4.0,
+    "norm": 13195.572265625,
+    "batch_slot": {
+      "chunk": 5,
+      "slot": 14
+    },
+    "seed": 112,
+    "matched_concept": "Mirrors"
+  },
+  "random__s113__a4": {
+    "class": "random",
+    "alpha": 4.0,
+    "norm": 10762.9921875,
+    "batch_slot": {
+      "chunk": 5,
+      "slot": 15
+    },
+    "seed": 113,
+    "matched_concept": "Fountains"
+  },
+  "random__s114__a4": {
+    "class": "random",
+    "alpha": 4.0,
+    "norm": 15585.6611328125,
+    "batch_slot": {
+      "chunk": 5,
+      "slot": 16
+    },
+    "seed": 114,
+    "matched_concept": "Quarries"
+  },
+  "random__s115__a4": {
+    "class": "random",
+    "alpha": 4.0,
+    "norm": 25231.5234375,
+    "batch_slot": {
+      "chunk": 5,
+      "slot": 17
+    },
+    "seed": 115,
+    "matched_concept": "Sadness"
+  },
+  "random__s116__a4": {
+    "class": "random",
+    "alpha": 4.0,
+    "norm": 16650.17578125,
+    "batch_slot": {
+      "chunk": 5,
+      "slot": 18
+    },
+    "seed": 116,
+    "matched_concept": "Xylophones"
+  },
+  "random__s117__a4": {
+    "class": "random",
+    "alpha": 4.0,
+    "norm": 17302.97265625,
+    "batch_slot": {
+      "chunk": 5,
+      "slot": 19
+    },
+    "seed": 117,
+    "matched_concept": "Secrecy"
+  },
+  "random__s118__a4": {
+    "class": "random",
+    "alpha": 4.0,
+    "norm": 17392.681640625,
+    "batch_slot": {
+      "chunk": 5,
+      "slot": 20
+    },
+    "seed": 118,
+    "matched_concept": "Oceans"
+  },
+  "random__s119__a4": {
+    "class": "random",
+    "alpha": 4.0,
+    "norm": 28564.802734375,
+    "batch_slot": {
+      "chunk": 5,
+      "slot": 21
+    },
+    "seed": 119,
+    "matched_concept": "Happiness"
+  },
+  "noise_floor_2": {
+    "class": "noise_floor",
+    "alpha": 0.0,
+    "norm": 0.0,
+    "batch_slot": {
+      "chunk": 5,
+      "slot": 22
+    }
+  }
+}
