@@ -7,9 +7,6 @@ import random
 import subprocess
 from typing import Any, Dict, Optional
 
-import numpy as np
-import torch
-
 
 def git_hash(cwd: Optional[str] = None) -> str:
     """Return current HEAD commit hash, or 'unknown' if unavailable."""
@@ -30,6 +27,7 @@ def assert_clean_pushed_main(cwd: Optional[str] = None) -> str:
     Assert a clean working tree and that HEAD exists on origin/main.
 
     Returns the HEAD hash to use for run logging. Aborts (raises) otherwise.
+    Does not import torch/numpy (safe for Modal local entrypoint).
     """
     root = cwd or os.getcwd()
 
@@ -58,7 +56,6 @@ def assert_clean_pushed_main(cwd: Optional[str] = None) -> str:
         ["git", "rev-parse", "origin/main"], cwd=root, text=True
     ).strip()
 
-    # HEAD must be an ancestor of (or equal to) origin/main — i.e. pushed.
     rc = subprocess.call(
         ["git", "merge-base", "--is-ancestor", head, "origin/main"],
         cwd=root,
@@ -82,12 +79,16 @@ def assert_clean_pushed_main(cwd: Optional[str] = None) -> str:
 
 
 def set_seeds(seed: int = 0) -> None:
+    import numpy as np
+    import torch
+
     torch.manual_seed(seed)
     np.random.seed(seed)
     random.seed(seed)
 
 
 def package_versions() -> Dict[str, str]:
+    import torch
     import transformers
 
     versions = {
@@ -111,6 +112,8 @@ def package_versions() -> Dict[str, str]:
 
 
 def cuda_env() -> Dict[str, Any]:
+    import torch
+
     info: Dict[str, Any] = {
         "cuda_available": torch.cuda.is_available(),
         "cuda": None,
