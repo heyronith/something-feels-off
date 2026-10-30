@@ -517,7 +517,8 @@ def run_wo_003a(
     prompts_meta = read_jsonl(wo_raw / "prompts.jsonl")
     prompts_by_set: Dict[str, List[int]] = defaultdict(list)
     for p in prompts_meta:
-        prompts_by_set[p["set"]].append(int(p["idx"]))
+        pi = int(p.get("prompt_idx", p.get("idx")))
+        prompts_by_set[p["set"]].append(pi)
     for s in prompts_by_set:
         prompts_by_set[s] = sorted(prompts_by_set[s])
 
