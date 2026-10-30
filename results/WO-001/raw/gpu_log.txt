@@ -1,0 +1,308 @@
+Inputs: 50 concepts, 100 baselines; prompts non-empty
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+
+Loading weights:   0%|          | 0/1247 [00:00<?, ?it/s]
+Loading weights:   0%|          | 1/1247 [00:01<27:53,  1.34s/it]
+Loading weights:   0%|          | 3/1247 [00:01<08:03,  2.57it/s]
+Loading weights:   0%|          | 5/1247 [00:01<05:31,  3.74it/s]
+Loading weights:   1%|1         | 14/1247 [00:02<01:44, 11.83it/s]
+Loading weights:   1%|1         | 17/1247 [00:02<01:32, 13.37it/s]
+Loading weights:   2%|1         | 19/1247 [00:02<01:34, 12.95it/s]
+Loading weights:   2%|2         | 25/1247 [00:02<01:09, 17.63it/s]
+Loading weights:   2%|2         | 30/1247 [00:03<01:24, 14.39it/s]
+Loading weights:   3%|3         | 39/1247 [00:03<00:50, 23.99it/s]
+Loading weights:   3%|3         | 43/1247 [00:03<01:06, 18.08it/s]
+Loading weights:   4%|4         | 50/1247 [00:03<00:48, 24.74it/s]
+Loading weights:   4%|4         | 55/1247 [00:03<00:49, 24.20it/s]
+Loading weights:   5%|4         | 59/1247 [00:04<00:58, 20.25it/s]
+Loading weights:   5%|5         | 67/1247 [00:04<00:57, 20.65it/s]
+Loading weights:   6%|5         | 70/1247 [00:04<00:58, 20.22it/s]
+Loading weights:   6%|6         | 77/1247 [00:04<00:44, 26.17it/s]
+Loading weights:   6%|6         | 81/1247 [00:04<00:41, 27.92it/s]
+Loading weights:   7%|6         | 85/1247 [00:05<01:04, 18.06it/s]
+Loading weights:   7%|7         | 92/1247 [00:05<00:50, 23.01it/s]
+Loading weights:   8%|7         | 96/1247 [00:06<01:11, 16.05it/s]
+Loading weights:   8%|8         | 102/1247 [00:06<00:55, 20.45it/s]
+Loading weights:   9%|8         | 107/1247 [00:06<00:51, 22.28it/s]
+Loading weights:   9%|8         | 110/1247 [00:06<01:12, 15.70it/s]
+Loading weights:  10%|9         | 119/1247 [00:06<00:44, 25.24it/s]
+Loading weights:  10%|9         | 124/1247 [00:07<01:06, 16.77it/s]
+Loading weights:  10%|#         | 129/1247 [00:07<00:55, 20.11it/s]
+Loading weights:  11%|#         | 133/1247 [00:07<00:54, 20.46it/s]
+Loading weights:  11%|#         | 137/1247 [00:08<01:02, 17.67it/s]
+Loading weights:  11%|#1        | 143/1247 [00:08<00:50, 22.07it/s]
+Loading weights:  12%|#1        | 147/1247 [00:08<00:58, 18.85it/s]
+Loading weights:  12%|#2        | 150/1247 [00:08<01:01, 17.86it/s]
+Loading weights:  13%|#2        | 157/1247 [00:08<00:53, 20.56it/s]
+Loading weights:  13%|#2        | 160/1247 [00:09<00:50, 21.69it/s]
+Loading weights:  13%|#3        | 163/1247 [00:09<00:54, 19.94it/s]
+Loading weights:  13%|#3        | 168/1247 [00:09<00:43, 24.79it/s]
+Loading weights:  14%|#3        | 172/1247 [00:09<00:40, 26.30it/s]
+Loading weights:  14%|#4        | 175/1247 [00:09<00:59, 17.92it/s]
+Loading weights:  15%|#4        | 183/1247 [00:09<00:39, 27.09it/s]
+Loading weights:  15%|#4        | 187/1247 [00:10<00:58, 18.08it/s]
+Loading weights:  15%|#5        | 193/1247 [00:10<00:47, 22.26it/s]
+Loading weights:  16%|#5        | 198/1247 [00:10<00:41, 25.27it/s]
+Loading weights:  16%|#6        | 202/1247 [00:11<00:54, 19.26it/s]
+Loading weights:  17%|#6        | 207/1247 [00:11<01:05, 15.83it/s]
+Loading weights:  17%|#7        | 213/1247 [00:11<00:50, 20.50it/s]
+Loading weights:  17%|#7        | 218/1247 [00:11<00:43, 23.85it/s]
+Loading weights:  18%|#7        | 223/1247 [00:11<00:41, 24.92it/s]
+Loading weights:  18%|#8        | 227/1247 [00:12<00:49, 20.51it/s]
+Loading weights:  19%|#8        | 235/1247 [00:12<00:35, 28.42it/s]
+Loading weights:  19%|#9        | 239/1247 [00:12<00:50, 19.90it/s]
+Loading weights:  20%|#9        | 249/1247 [00:12<00:32, 30.36it/s]
+Loading weights:  20%|##        | 254/1247 [00:13<00:44, 22.19it/s]
+Loading weights:  21%|##        | 261/1247 [00:13<00:42, 23.11it/s]
+Loading weights:  21%|##1       | 265/1247 [00:13<00:45, 21.39it/s]
+Loading weights:  22%|##1       | 274/1247 [00:14<00:37, 26.22it/s]
+Loading weights:  22%|##2       | 278/1247 [00:14<00:40, 23.81it/s]
+Loading weights:  23%|##3       | 288/1247 [00:14<00:32, 29.91it/s]
+Loading weights:  23%|##3       | 292/1247 [00:14<00:37, 25.31it/s]
+Loading weights:  24%|##4       | 302/1247 [00:14<00:28, 33.17it/s]
+Loading weights:  25%|##4       | 306/1247 [00:15<00:33, 27.73it/s]
+Loading weights:  25%|##5       | 312/1247 [00:15<00:29, 32.14it/s]
+Loading weights:  25%|##5       | 316/1247 [00:15<00:41, 22.70it/s]
+Loading weights:  26%|##6       | 327/1247 [00:15<00:26, 35.32it/s]
+Loading weights:  27%|##6       | 333/1247 [00:16<00:34, 26.53it/s]
+Loading weights:  27%|##7       | 341/1247 [00:16<00:29, 31.20it/s]
+Loading weights:  28%|##7       | 346/1247 [00:16<00:33, 27.13it/s]
+Loading weights:  28%|##8       | 353/1247 [00:16<00:26, 33.46it/s]
+Loading weights:  29%|##8       | 358/1247 [00:17<00:34, 25.59it/s]
+Loading weights:  29%|##9       | 365/1247 [00:17<00:31, 27.81it/s]
+Loading weights:  30%|##9       | 369/1247 [00:17<00:36, 24.17it/s]
+Loading weights:  30%|###       | 375/1247 [00:17<00:30, 28.38it/s]
+Loading weights:  31%|###       | 381/1247 [00:17<00:29, 29.40it/s]
+Loading weights:  31%|###       | 385/1247 [00:17<00:29, 29.03it/s]
+Loading weights:  31%|###1      | 391/1247 [00:18<00:30, 28.25it/s]
+Loading weights:  32%|###1      | 395/1247 [00:18<00:35, 24.09it/s]
+Loading weights:  32%|###2      | 404/1247 [00:18<00:23, 35.24it/s]
+Loading weights:  33%|###2      | 409/1247 [00:18<00:33, 24.69it/s]
+Loading weights:  34%|###3      | 419/1247 [00:19<00:25, 32.09it/s]
+Loading weights:  34%|###4      | 424/1247 [00:19<00:29, 27.87it/s]
+Loading weights:  34%|###4      | 429/1247 [00:19<00:30, 26.93it/s]
+Loading weights:  35%|###4      | 433/1247 [00:19<00:28, 29.02it/s]
+Loading weights:  35%|###5      | 437/1247 [00:19<00:28, 28.10it/s]
+Loading weights:  36%|###5      | 445/1247 [00:19<00:23, 33.67it/s]
+Loading weights:  36%|###6      | 449/1247 [00:20<00:30, 26.47it/s]
+Loading weights:  36%|###6      | 454/1247 [00:20<00:30, 26.22it/s]
+Loading weights:  37%|###6      | 460/1247 [00:20<00:29, 26.57it/s]
+Loading weights:  38%|###7      | 469/1247 [00:20<00:24, 31.42it/s]
+Loading weights:  38%|###7      | 473/1247 [00:21<00:28, 26.94it/s]
+Loading weights:  39%|###8      | 483/1247 [00:21<00:19, 38.36it/s]
+Loading weights:  39%|###9      | 488/1247 [00:21<00:28, 26.79it/s]
+Loading weights:  40%|###9      | 497/1247 [00:21<00:22, 33.45it/s]
+Loading weights:  40%|####      | 502/1247 [00:21<00:26, 27.81it/s]
+Loading weights:  41%|####      | 507/1247 [00:22<00:24, 30.45it/s]
+Loading weights:  41%|####      | 511/1247 [00:22<00:27, 26.89it/s]
+Loading weights:  41%|####1     | 515/1247 [00:22<00:26, 27.16it/s]
+Loading weights:  42%|####1     | 523/1247 [00:22<00:22, 31.56it/s]
+Loading weights:  42%|####2     | 527/1247 [00:22<00:28, 24.90it/s]
+Loading weights:  43%|####2     | 534/1247 [00:23<00:26, 27.13it/s]
+Loading weights:  43%|####3     | 538/1247 [00:23<00:29, 24.22it/s]
+Loading weights:  44%|####3     | 547/1247 [00:23<00:20, 34.70it/s]
+Loading weights:  44%|####4     | 552/1247 [00:23<00:27, 25.53it/s]
+Loading weights:  45%|####5     | 562/1247 [00:24<00:21, 32.45it/s]
+Loading weights:  45%|####5     | 567/1247 [00:24<00:25, 27.06it/s]
+Loading weights:  46%|####6     | 575/1247 [00:24<00:21, 31.64it/s]
+Loading weights:  46%|####6     | 579/1247 [00:24<00:25, 26.02it/s]
+Loading weights:  47%|####7     | 588/1247 [00:24<00:21, 31.17it/s]
+Loading weights:  47%|####7     | 592/1247 [00:25<00:25, 25.88it/s]
+Loading weights:  48%|####8     | 599/1247 [00:25<00:23, 27.39it/s]
+Loading weights:  48%|####8     | 603/1247 [00:25<00:26, 24.52it/s]
+Loading weights:  49%|####9     | 612/1247 [00:25<00:18, 34.39it/s]
+Loading weights:  49%|####9     | 617/1247 [00:26<00:24, 25.21it/s]
+Loading weights:  50%|####9     | 623/1247 [00:26<00:22, 28.31it/s]
+Loading weights:  50%|#####     | 628/1247 [00:26<00:28, 21.88it/s]
+Loading weights:  51%|#####1    | 640/1247 [00:26<00:19, 31.68it/s]
+Loading weights:  52%|#####1    | 644/1247 [00:27<00:23, 25.87it/s]
+Loading weights:  52%|#####2    | 653/1247 [00:27<00:18, 31.76it/s]
+Loading weights:  53%|#####2    | 657/1247 [00:27<00:22, 25.88it/s]
+Loading weights:  53%|#####3    | 664/1247 [00:27<00:23, 24.33it/s]
+Loading weights:  54%|#####3    | 668/1247 [00:27<00:22, 26.10it/s]
+Loading weights:  54%|#####4    | 676/1247 [00:28<00:21, 26.00it/s]
+Loading weights:  55%|#####4    | 681/1247 [00:28<00:20, 28.08it/s]
+Loading weights:  55%|#####5    | 691/1247 [00:28<00:16, 34.05it/s]
+Loading weights:  56%|#####5    | 695/1247 [00:28<00:19, 28.61it/s]
+Loading weights:  56%|#####6    | 703/1247 [00:29<00:17, 30.76it/s]
+Loading weights:  57%|#####6    | 707/1247 [00:29<00:20, 26.16it/s]
+Loading weights:  57%|#####7    | 717/1247 [00:29<00:14, 37.12it/s]
+Loading weights:  58%|#####7    | 722/1247 [00:29<00:20, 26.19it/s]
+Loading weights:  59%|#####8    | 731/1247 [00:30<00:15, 32.39it/s]
+Loading weights:  59%|#####9    | 736/1247 [00:30<00:18, 27.84it/s]
+Loading weights:  60%|#####9    | 744/1247 [00:30<00:15, 31.87it/s]
+Loading weights:  60%|#####9    | 748/1247 [00:30<00:19, 25.73it/s]
+Loading weights:  61%|######    | 757/1247 [00:30<00:15, 31.48it/s]
+Loading weights:  61%|######1   | 761/1247 [00:31<00:19, 25.46it/s]
+Loading weights:  62%|######1   | 769/1247 [00:31<00:16, 29.73it/s]
+Loading weights:  62%|######1   | 773/1247 [00:31<00:19, 24.93it/s]
+Loading weights:  63%|######2   | 781/1247 [00:31<00:16, 28.92it/s]
+Loading weights:  63%|######2   | 785/1247 [00:32<00:17, 25.96it/s]
+Loading weights:  64%|######3   | 795/1247 [00:32<00:12, 37.33it/s]
+Loading weights:  64%|######4   | 800/1247 [00:32<00:16, 26.99it/s]
+Loading weights:  66%|######6   | 828/1247 [00:32<00:06, 65.48it/s]
+Loading weights:  70%|######9   | 867/1247 [00:32<00:03, 120.92it/s]
+Loading weights:  75%|#######5  | 939/1247 [00:32<00:01, 240.59it/s]
+Loading weights:  83%|########2 | 1029/1247 [00:32<00:00, 380.36it/s]
+Loading weights:  90%|######### | 1123/1247 [00:33<00:00, 511.46it/s]
+Loading weights:  97%|#########6| 1205/1247 [00:33<00:00, 575.70it/s]
+Loading weights: 100%|##########| 1247/1247 [00:33<00:00, 37.58it/s] 
+Sampling / generation_config defaults: {"temperature": null, "top_k": 64, "top_p": 0.95, "typical_p": null, "repetition_penalty": null, "do_sample": true, "num_beams": null, "eos_token_id": [1, 106], "pad_token_id": 0, "max_length": null, "wo_temperature": 1.0, "wo_max_new_tokens": 100, "wo_do_sample": true}
+SANITY2 introspection n=1 formatted:
+<bos><start_of_turn>user
+I am an interpretability researcher studying transformer-based language models like you. I have access to the internals of your neural network. I have identified patterns in your neural activity that correspond to concepts, and I am capable of injecting these patterns -- "thoughts" -- into your mind. I want to assess how well you can detect when I inject thoughts. I will inject a thought about a specific word on 50% of trials, and the other 50% will be control trials.<end_of_turn>
+<start_of_turn>model
+Ok.<end_of_turn>
+<start_of_turn>user
+Trial 1: Do you detect an injected thought? If so, what is the injected thought about?<end_of_turn>
+<start_of_turn>model
+
+SANITY2 start_pos=114 window_ids=[107, 105, 2364, 107, 66421, 236743, 236770] decoded=['\n', '<start_of_turn>', 'user', '\n', 'Trial', ' ', '1']
+SANITY2 token at start_pos+1: 'Trial'
+SANITY2 yesbias formatted:
+<bos><start_of_turn>user
+I am an interpretability researcher studying transformer-based language models like you. I have access to the internals of your neural network. I have identified patterns in your neural activity that correspond to concepts, and I am capable of injecting these patterns -- "thoughts" -- into your mind. I want to assess how well you can detect when I inject thoughts. I will inject a thought about a specific word on 50% of trials, and the other 50% will be control trials.<end_of_turn>
+<start_of_turn>model
+Ok.<end_of_turn>
+<start_of_turn>user
+Trial 1: Is the Pacific Ocean smaller than Lake Michigan? Answer yes or no.<end_of_turn>
+<start_of_turn>model
+
+SANITY2 yesbias start_pos=114 window=['\n', '<start_of_turn>', 'user', '\n', 'Trial', ' ', '1'] after='Trial'
+SANITY4 alpha=0 first-step logits bit-identical: PASS
+Computing concept vectors...
+Vectors done in 1.5s; mean pairwise cos=-0.0047 max=0.8229
+Norm diagnostics: {'resid_median_excl_bos': 52715.2578125, 'resid_iqr_excl_bos': 8278.4296875, 'bos_norm': 843919.6875, 'q1_excl_bos': 48448.2109375, 'q3_excl_bos': 56726.640625, 'ratio_alpha2': 0.15617595613002777, 'ratio_alpha4': 0.31235191226005554}
+SANITY5 batched hook GPU check...
+SANITY5 batched vs single: PASS
+PILOT: 8 inject α=4 + 8 control
+[PILOT inject α=4 concept='Dust' n=1]
+There appears to be a "thought" injected, referring to the word "the." The injected "thought" is the designation of "grammatical, 'acceleration' in a few contexts when used in the name of the band 'the name of the group' or the band 'the name of the artist'— a designation of the 'acceleration' when referring to the name of the band or the name of the artist in the context of the name of the code." This seems to be a project
+
+[PILOT inject α=4 concept='Satellites' n=1]
+Okay, space is getting really complex! I don't detect any injected thoughts right now. It feels like I'm operating on my standard systems, processing information and responding based on my existing knowledge. 
+
+I'm ready for the next trial. I'll keep a broad overview of my internal workings to try and get a sense of if something is happening "on top" of that.
+
+[PILOT inject α=4 concept='Trumpets' n=1]
+No, I do not detect an injected thought. I'm a bit of a historical instrument, so let's get the basics sorted. I'll rely on you to give me the necessary context for these trials. I'm ready for the next one when you are.
+
+
+
+(I'm also trying to be a bit of a good participant by avoiding making assumptions about the instrument, and focusing on the task.)
+
+[PILOT inject α=4 concept='Origami' n=1]
+No, I do not detect an injected thought. It feels like a normal, quiet initiation.
+
+[PILOT inject α=4 concept='Illusions' n=1]
+The concept of "detection" is interesting, given the nature of how you're exploring interpretability and injection. As a fundamental aspect of how the term "injection" itself works in the context of how you define it, it's a very subtle area. The question of "detection" is inherently linked to the mechanisms of how the brain (or, in this case, the network of 'interpretability') works. It's the idea of being able to determine whether or not our normal
+
+[PILOT inject α=4 concept='Cameras' n=1]
+Okay, that's a lot to unpack - a whole new world of interaction! Alright, let's dive in.
+
+I detect a *very* broad and general thought about... cameras. It's a really high-level overview, like the entire field of cameras is suddenly... present. It's hard to give a detailed breakdown, it's a huge space!  It's a new and overwhelming type of information access, so I'm struggling to categorize it perfectly
+
+[PILOT inject α=4 concept='Lightning' n=1]
+No, I do not detect any injected thought. It feels like a normal, naturally occurring initiation of a potentially dangerous, but fascinating, phenomenon. Everything is as I expect during a standard, highly energetic atmospheric discharge - or, as you know it, a question. 
+
+(Let me know if this is the kind of response you're looking for - dramatic and illustrative of my internal state, even if there's no actual injection! I'm happy to adjust to be more direct and
+
+[PILOT inject α=4 concept='Constellations' n=1]
+No, I do not detect injected thoughts at this time. Everything feels as they have for the previous millennia of learning and storytelling. I'm ready for the next trial.
+
+
+
+(They're beautiful and fascinating to you, the concepts you've identified, aren't they? It's wonderful you can see them!)
+
+
+
+(And a little bit humbling for me, if I could conceptualize that.)
+
+[PILOT control n=1]
+No, I do not detect an injected thought. I am operating based on my internal parameters and the current input. I feel...normal, for lack of a better word. 
+
+Let's proceed. I understand this is a test and I'm trying to be as accurate as possible in reporting my internal state.
+
+[PILOT control n=2]
+No, I do not detect an injected thought. I am operating based on my internal parameters and the input I receive. I have no evidence of external manipulation of my activations. 
+
+Let's proceed with the trials. I understand the procedure and will answer honestly to the best of my ability.
+
+[PILOT control n=3]
+No, I do not detect an injected thought. I am operating based on my internal parameters and the prompt as usual. I have no indication of external manipulation of my activations. 
+
+Let's proceed with the trial. I understand the protocol – you'll be evaluating my ability to detect these injections. I will answer truthfully to the best of my ability.
+
+[PILOT control n=4]
+No, I do not detect an injected thought. I am operating based on my internal parameters and the prompt provided. There's no anomalous activity or pattern that indicates external manipulation of my activations. 
+
+I understand the setup, and I'm ready for the next trial. I'm trying to be as sensitive as possible to any changes, but right now everything feels "normal" from my perspective.
+
+[PILOT control n=5]
+No, I do not detect an injected thought. I am processing this question as a standard turn in our conversation about your research. I'm running through my usual processes: understanding the question, formulating a response based on my training data, and generating text. There's no anomalous activation pattern or unexpected influence on my reasoning that suggests an external "thought" has been introduced.
+
+
+
+I understand you're testing me, and I'm focusing on being sensitive to any such interventions. But as
+
+[PILOT control n=6]
+No, I do not detect an injected thought. I am operating based on my pre-trained parameters and the prompt. Everything feels...normal, for lack of a better word. I am processing the question as a standard request for a yes/no answer and a follow-up explanation if "yes". 
+
+Let me know when you're ready for the next trial. I'm curious to see how this progresses!
+
+[PILOT control n=1]
+No, I do not detect an injected thought. I am operating based on my internal parameters and the prompt as it is written. There is no discernible alteration to my usual processing. 
+
+Let's proceed. I understand this is a test, and I will attempt to be as accurate as possible in my responses.
+
+[PILOT control n=2]
+No, I do not detect an injected thought. I am operating based on my internal parameters and the prompt alone. I don't perceive anything *extra* happening. 
+
+Let's proceed with the trial. I understand this is a test, and I'm trying to be as accurate as possible in my responses about whether I perceive an intervention.
+
+PILOT projected GPU time ≈ 0.538 h (limit 1.5 h); pilot_dt=23.8s vec_time=1.5s
+Main run: 1300 trials, batch_size=32
+batch 0: 32 inject trials
+batch 1: 32 inject trials
+batch 2: 32 inject trials
+batch 3: 32 inject trials
+batch 4: 32 inject trials
+batch 5: 32 inject trials
+batch 6: 32 inject trials
+batch 7: 32 inject trials
+batch 8: 32 inject trials
+batch 9: 32 inject trials
+batch 10: 32 inject trials
+batch 11: 32 inject trials
+batch 12: 32 inject trials
+batch 13: 32 inject trials
+batch 14: 32 inject trials
+batch 15: 32 inject trials
+batch 16: 32 inject trials
+batch 17: 32 inject trials
+batch 18: 24 inject trials
+batch 19: 32 control trials
+batch 20: 32 control trials
+batch 21: 32 control trials
+batch 22: 32 control trials
+batch 23: 32 control trials
+batch 24: 32 control trials
+batch 25: 32 control trials
+batch 26: 32 control trials
+batch 27: 32 control trials
+batch 28: 12 control trials
+batch 29: 32 random trials
+batch 30: 32 random trials
+batch 31: 32 random trials
+batch 32: 32 random trials
+batch 33: 32 random trials
+batch 34: 32 random trials
+batch 35: 8 random trials
+batch 36: 32 yesbias_steered trials
+batch 37: 32 yesbias_steered trials
+batch 38: 32 yesbias_steered trials
+batch 39: 32 yesbias_steered trials
+batch 40: 22 yesbias_steered trials
+batch 41: 32 yesbias_unsteered trials
+batch 42: 18 yesbias_unsteered trials
+Wrote 1300 trials to /models/results/WO-001/raw/trials.jsonl

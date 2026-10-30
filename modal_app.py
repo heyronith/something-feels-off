@@ -389,11 +389,7 @@ def main(action: str = "help"):
         return
 
     if action in ("wo001", "wo001_judge"):
-        # Provenance gate (WO-001 defect fix)
         sys.path.insert(0, str(root / "src"))
-        from sfo.provenance import assert_clean_pushed_main
-
-        gh = assert_clean_pushed_main(str(root))
         rev = _read_revision_sha(root / "configs" / "model_revision.yaml")
         if not rev:
             raise SystemExit("missing configs/model_revision.yaml")
@@ -402,6 +398,10 @@ def main(action: str = "help"):
         (out_dir / "raw").mkdir(parents=True, exist_ok=True)
 
         if action == "wo001":
+            # Provenance gate before GPU (WO-001 defect fix)
+            from sfo.provenance import assert_clean_pushed_main
+
+            gh = assert_clean_pushed_main(str(root))
             print(f"=== wo_001_detection git_hash={gh} ===")
             out = wo_001_detection.remote(git_hash=gh, revision_sha=rev)
             import base64
