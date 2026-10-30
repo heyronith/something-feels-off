@@ -56,6 +56,11 @@ image = (
         remote_path="/root/results/WO-001",
         ignore=["**/__pycache__/**"],
     )
+    .add_local_dir(
+        str(REPO / "results" / "WO-002b"),
+        remote_path="/root/results/WO-002b",
+        ignore=["**/__pycache__/**", "**/partA_shifts.pt"],
+    )
 )
 
 app = modal.App(APP_NAME, image=image)
@@ -727,6 +732,116 @@ def wo_002b_judge() -> dict:
     }
 
 
+@app.function(
+    volumes={"/models": volume},
+    secrets=[hf_secret],
+    timeout=60 * 60 * 4,
+    cpu=4.0,
+    memory=16384,
+)
+def wo_003_download() -> dict:
+    """CPU: download GemmaScope-2 affine transcoder params for layers 45 and 50."""
+    import importlib.util
+    import json
+    from pathlib import Path
+
+    spec = importlib.util.spec_from_file_location(
+        "wo_003_download", "/root/scripts/wo_003_download.py"
+    )
+    mod = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(mod)
+    out = mod.run_download("/models")
+    volume.commit()
+    return {
+        "revision": out["revision"],
+        "target_dir": out["target_dir"],
+        "sizes_bytes": out["sizes_bytes"],
+        "revision.json": json.dumps(out, indent=2),
+    }
+
+
+@app.function(
+    gpu="A100-80GB",
+    volumes={"/models": volume},
+    secrets=[hf_secret],
+    timeout=90 * 60,
+    cpu=GPU_CPU_CORES,
+    memory=GPU_MEMORY_MIB,
+)
+def wo_003_run(git_hash: str, revision_sha: str) -> dict:
+    import importlib.util
+    import sys
+    from pathlib import Path
+
+    results_dir = Path(f"{VOLUME_RESULTS}/WO-003")
+    results_dir.mkdir(parents=True, exist_ok=True)
+    (results_dir / "raw").mkdir(parents=True, exist_ok=True)
+    ledger_path = Path(VOLUME_LEDGER)
+    ledger_path.parent.mkdir(parents=True, exist_ok=True)
+    log_path = results_dir / "raw" / "sanity_log.txt"
+
+    class Tee:
+        def __init__(self, *streams):
+            self.streams = streams
+
+        def write(self, data):
+            for s in self.streams:
+                s.write(data)
+                s.flush()
+
+        def flush(self):
+            for s in self.streams:
+                s.flush()
+
+    spec = importlib.util.spec_from_file_location(
+        "wo_003_run", "/root/scripts/wo_003_run.py"
+    )
+    mod = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+
+    def _commit():
+        volume.commit()
+
+    with open(log_path, "w") as logf:
+        old_out, old_err = sys.stdout, sys.stderr
+        sys.stdout = Tee(old_out, logf)
+        sys.stderr = Tee(old_err, logf)
+        try:
+            spec.loader.exec_module(mod)
+            summary = mod.run_wo_003(
+                model_dir=MODEL_DIR,
+                revision_sha=revision_sha,
+                config_path="/root/configs/wo_003.yaml",
+                results_dir=str(results_dir),
+                ledger_path=str(ledger_path),
+                transcoder_root="/models/gemmascope2-27b-it/transcoder_all",
+                wo001_vectors_path="/root/results/WO-001/raw/concept_vectors_L37.pt",
+                wo001_snapshot_path="/root/results/WO-001/raw/inputs_snapshot.json",
+                wo002b_directions_path="/root/results/WO-002b/raw/directions_B1p.pt",
+                git_hash_str=git_hash,
+                gpu_type="A100-80GB",
+                n_cores=GPU_CPU_CORES,
+                mem_gib=GPU_MEMORY_GIB,
+                volume_commit=_commit,
+            )
+        finally:
+            sys.stdout = old_out
+            sys.stderr = old_err
+            _commit()
+
+    import json
+
+    return {
+        "status": (summary or {}).get("status"),
+        "stopped": bool((summary or {}).get("stopped") or (summary or {}).get("status") == "STOPPED"),
+        "budget_ledger.csv": ledger_path.read_text() if ledger_path.exists() else "",
+        "run_summary.json": (results_dir / "run_summary.json").read_text()
+        if (results_dir / "run_summary.json").exists()
+        else json.dumps(summary or {}, indent=2, default=str),
+    }
+
+
 def _read_revision_sha(rev_path: Path) -> str | None:
     """Parse revision_sha from model_revision.yaml without PyYAML (local entrypoint)."""
     if not rev_path.exists():
@@ -772,9 +887,56 @@ def main(action: str = "help"):
             "Usage: modal run modal_app.py --action "
             "[freeze|download|manifest|smoke|all|wo001|wo001_judge|"
             "wo002_partA|wo002_partB|wo002_judge|"
-            "wo002b_partA|wo002b_partB|wo002b_judge]"
+            "wo002b_partA|wo002b_partB|wo002b_judge|"
+            "wo003_download|wo003_run]"
         )
         return
+
+    if action in ("wo003_download", "wo003_run"):
+        sys.path.insert(0, str(root / "src"))
+        rev = _read_revision_sha(root / "configs" / "model_revision.yaml")
+        if not rev:
+            raise SystemExit("missing configs/model_revision.yaml")
+        out_dir = root / "results" / "WO-003"
+        out_dir.mkdir(parents=True, exist_ok=True)
+        (out_dir / "raw").mkdir(parents=True, exist_ok=True)
+
+        def _pull_wo003():
+            dest = root / "results"
+            dest.mkdir(parents=True, exist_ok=True)
+            subprocess.check_call(
+                [
+                    "modal",
+                    "volume",
+                    "get",
+                    "--force",
+                    VOLUME_NAME,
+                    "results/WO-003",
+                    str(dest),
+                ]
+            )
+
+        if action == "wo003_download":
+            print("=== wo_003_download ===")
+            out = wo_003_download.remote()
+            (out_dir / "transcoder_revision.json").write_text(out["revision.json"])
+            print("Downloaded transcoder revision", out.get("revision"))
+            print("sizes", out.get("sizes_bytes"))
+            return
+
+        if action == "wo003_run":
+            from sfo.provenance import assert_clean_pushed_main
+
+            gh = assert_clean_pushed_main(str(root))
+            print(f"=== wo_003_run git_hash={gh} ===")
+            out = wo_003_run.remote(git_hash=gh, revision_sha=rev)
+            (out_dir / "run_summary.json").write_text(out["run_summary.json"])
+            _merge_ledger(
+                root / "results" / "budget_ledger.csv", out.get("budget_ledger.csv", "")
+            )
+            _pull_wo003()
+            print("WO-003 run status:", out.get("status"), "stopped=", out.get("stopped"))
+            return
 
     if action in ("wo002b_partA", "wo002b_partB", "wo002b_judge"):
         sys.path.insert(0, str(root / "src"))
