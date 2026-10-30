@@ -22,7 +22,7 @@ PYTHONPATH=src python scripts/wo_002b_metrics.py results/WO-002b
 ## Git hash
 - Primary implementation: `d2357df` (`WO-002b: Paired shift-removal blocker (B1′)`)
 - Part A success run: `c2…` / tip before Part B — ledger rows record exact hashes
-- Completion commit: `9f33fa0adee36e5b8a4d3aa78827518513d679d6`
+- Completion commit: `cd3699e` (`WO-002b: Paired shift-removal blocker (B1′)`)
 - Model revision: `005ad3404e59d6023443cb575daa05336842228a`
 - Depends on WO-002: `02fd52a`
 
