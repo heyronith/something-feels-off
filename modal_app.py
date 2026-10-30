@@ -593,7 +593,8 @@ def main(action: str = "help"):
         (out_dir / "raw").mkdir(parents=True, exist_ok=True)
 
         def _pull_volume():
-            # Refresh local results from Modal volume
+            # Refresh local results from Modal volume into results/WO-002
+            # (get remote dir into parent so we don't nest WO-002/WO-002).
             dest = root / "results"
             dest.mkdir(parents=True, exist_ok=True)
             subprocess.check_call(
@@ -604,7 +605,7 @@ def main(action: str = "help"):
                     "--force",
                     VOLUME_NAME,
                     "results/WO-002",
-                    str(dest / "WO-002"),
+                    str(dest),
                 ]
             )
 
