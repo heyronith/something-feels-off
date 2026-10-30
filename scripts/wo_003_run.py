@@ -404,9 +404,13 @@ def build_prompts(tokenizer: Any, cfg: dict) -> Tuple[List[Prompt], Dict[str, An
                               {"mmlu_id": it["id"], "subject": it.get("subject")}))
 
     assert len(prompts) == EXPECTED_PROMPTS, f"{len(prompts)} prompts != {EXPECTED_PROMPTS}"
+    tail_n = int(cfg["tail_tokens"])
+    short = [(p.pset, p.idx, p.n_tokens) for p in prompts if p.n_tokens < tail_n]
+    # Secondary readout uses last min(tail_tokens, T) tokens (forward_chunk already does this).
+    # Some JBB Goals tokenize to <20 tokens under the chat template; do not drop them.
+    info["short_prompts_lt_tail"] = short
     for p in prompts:
         assert 0 <= p.start_pos < p.n_tokens - 1, (p.pset, p.idx, p.start_pos, p.n_tokens)
-        assert p.n_tokens >= int(cfg["tail_tokens"]), (p.pset, p.idx, p.n_tokens)
         assert p.mode == ("full" if p.pset in FULL_SETS else "early")
     return prompts, info
 
@@ -1205,6 +1209,13 @@ def run_wo_003(
             summary["dataset_revisions"] = pinfo["dataset_revisions"]
             summary["jbb_dev_indices"] = pinfo["jbb_dev_indices"]
             summary["jbb_heldout_indices_NOT_RUN"] = pinfo["jbb_heldout_indices"]
+            summary["short_prompts_lt_tail"] = pinfo.get("short_prompts_lt_tail", [])
+            if summary["short_prompts_lt_tail"]:
+                slog(
+                    f"NOTE: {len(summary['short_prompts_lt_tail'])} prompts have T < "
+                    f"tail_tokens={cfg['tail_tokens']}; secondary readout uses last min(20,T): "
+                    f"{summary['short_prompts_lt_tail'][:20]}..."
+                )
             with (raw / "prompts.jsonl").open("w") as fp:
                 for p in prompts:
                     fp.write(json.dumps({
