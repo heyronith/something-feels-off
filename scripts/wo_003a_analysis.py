@@ -537,8 +537,9 @@ def run_wo_003a(
         assert len(sparse[L]) == 38038, len(sparse[L])
         missing = []
         for p in prompts_meta:
+            pi = int(p.get("prompt_idx", p.get("idx")))
             for c in cids:
-                k = (p["set"], int(p["idx"]), c)
+                k = (p["set"], pi, c)
                 if k not in sparse[L]:
                     missing.append(k)
                     if len(missing) > 5:
