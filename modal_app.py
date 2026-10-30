@@ -799,6 +799,8 @@ def wo_003_run(git_hash: str, revision_sha: str) -> dict:
     )
     mod = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
+    # Required for @dataclass under importlib (sys.modules lookup).
+    sys.modules[spec.name] = mod
 
     def _commit():
         volume.commit()
