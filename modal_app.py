@@ -535,6 +535,198 @@ def wo_002_judge() -> dict:
     }
 
 
+@app.function(
+    gpu="A100-80GB",
+    volumes={"/models": volume},
+    secrets=[hf_secret],
+    timeout=90 * 60,
+    cpu=GPU_CPU_CORES,
+    memory=GPU_MEMORY_MIB,
+)
+def wo_002b_partA(git_hash: str, revision_sha: str) -> dict:
+    import importlib.util
+    import sys
+    from pathlib import Path
+
+    results_dir = Path(f"{VOLUME_RESULTS}/WO-002b")
+    results_dir.mkdir(parents=True, exist_ok=True)
+    (results_dir / "raw").mkdir(parents=True, exist_ok=True)
+    ledger_path = Path(VOLUME_LEDGER)
+    ledger_path.parent.mkdir(parents=True, exist_ok=True)
+    log_path = results_dir / "raw" / "partA_gpu_log.txt"
+
+    class Tee:
+        def __init__(self, *streams):
+            self.streams = streams
+
+        def write(self, data):
+            for s in self.streams:
+                s.write(data)
+                s.flush()
+
+        def flush(self):
+            for s in self.streams:
+                s.flush()
+
+    spec = importlib.util.spec_from_file_location(
+        "wo_002b_partA", "/root/scripts/wo_002b_partA.py"
+    )
+    mod = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+
+    def _commit():
+        volume.commit()
+
+    with open(log_path, "w") as logf:
+        old_out, old_err = sys.stdout, sys.stderr
+        sys.stdout = Tee(old_out, logf)
+        sys.stderr = Tee(old_err, logf)
+        try:
+            spec.loader.exec_module(mod)
+            summary = mod.run_part_a(
+                model_dir=MODEL_DIR,
+                revision_sha=revision_sha,
+                config_path="/root/configs/wo_002b.yaml",
+                results_dir=str(results_dir),
+                ledger_path=str(ledger_path),
+                wo001_vectors_path="/root/results/WO-001/raw/concept_vectors_L37.pt",
+                wo001_snapshot_path="/root/results/WO-001/raw/inputs_snapshot.json",
+                wo001_per_concept_csv="/root/results/WO-001/raw/per_concept.csv",
+                wo002_vectors_path=f"{VOLUME_RESULTS}/WO-002/raw/concept_vectors_L37_new450.pt",
+                wo002_directions_path=f"{VOLUME_RESULTS}/WO-002/raw/directions.pt",
+                git_hash_str=git_hash,
+                gpu_type="A100-80GB",
+                n_cores=GPU_CPU_CORES,
+                mem_gib=GPU_MEMORY_GIB,
+                volume_commit=_commit,
+            )
+        finally:
+            sys.stdout = old_out
+            sys.stderr = old_err
+            _commit()
+
+    return {
+        "l0_star": (summary or {}).get("partA", {}).get("l0_star"),
+        "l0_flag": (summary or {}).get("partA", {}).get("l0_flag"),
+        "stopped_before_partB": bool((summary or {}).get("stopped_before_partB")),
+        "projected_hours": (summary or {}).get("projected_hours"),
+        "budget_ledger.csv": ledger_path.read_text() if ledger_path.exists() else "",
+        "partA_summary.json": (results_dir / "partA_summary.json").read_text(),
+    }
+
+
+@app.function(
+    gpu="A100-80GB",
+    volumes={"/models": volume},
+    secrets=[hf_secret],
+    timeout=90 * 60,
+    cpu=GPU_CPU_CORES,
+    memory=GPU_MEMORY_MIB,
+)
+def wo_002b_partB(git_hash: str, revision_sha: str) -> dict:
+    import importlib.util
+    import sys
+    from pathlib import Path
+
+    results_dir = Path(f"{VOLUME_RESULTS}/WO-002b")
+    ledger_path = Path(VOLUME_LEDGER)
+    log_path = results_dir / "raw" / "partB_gpu_log.txt"
+
+    class Tee:
+        def __init__(self, *streams):
+            self.streams = streams
+
+        def write(self, data):
+            for s in self.streams:
+                s.write(data)
+                s.flush()
+
+        def flush(self):
+            for s in self.streams:
+                s.flush()
+
+    spec = importlib.util.spec_from_file_location(
+        "wo_002b_partB", "/root/scripts/wo_002b_partB.py"
+    )
+    mod = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+
+    def _commit():
+        volume.commit()
+
+    with open(log_path, "w") as logf:
+        old_out, old_err = sys.stdout, sys.stderr
+        sys.stdout = Tee(old_out, logf)
+        sys.stderr = Tee(old_err, logf)
+        try:
+            spec.loader.exec_module(mod)
+            summary = mod.run_part_b(
+                model_dir=MODEL_DIR,
+                revision_sha=revision_sha,
+                config_path="/root/configs/wo_002b.yaml",
+                results_dir=str(results_dir),
+                ledger_path=str(ledger_path),
+                wo001_vectors_path="/root/results/WO-001/raw/concept_vectors_L37.pt",
+                wo001_snapshot_path="/root/results/WO-001/raw/inputs_snapshot.json",
+                wo002_wikitext_path=f"{VOLUME_RESULTS}/WO-002/raw/wikitext_chunks.jsonl",
+                git_hash_str=git_hash,
+                gpu_type="A100-80GB",
+                n_cores=GPU_CPU_CORES,
+                mem_gib=GPU_MEMORY_GIB,
+                volume_commit=_commit,
+            )
+        finally:
+            sys.stdout = old_out
+            sys.stderr = old_err
+            _commit()
+
+    return {
+        "n_errors": len((summary or {}).get("errors", [])),
+        "kl_ratio": (summary or {}).get("kl_ratio"),
+        "budget_ledger.csv": ledger_path.read_text() if ledger_path.exists() else "",
+        "partB_summary.json": (results_dir / "partB_summary.json").read_text(),
+    }
+
+
+@app.function(
+    volumes={"/models": volume},
+    secrets=[openai_secret],
+    timeout=60 * 60 * 3,
+    cpu=4.0,
+    memory=8192,
+)
+def wo_002b_judge() -> dict:
+    import importlib.util
+    import json
+    import os
+    from pathlib import Path
+
+    if not (os.environ.get("OPENAI_API_KEY") or os.environ.get("OPENAI_KEY")):
+        return {"blocked": True, "reason": "OPENAI_API_KEY missing"}
+
+    results_dir = Path(f"{VOLUME_RESULTS}/WO-002b")
+    wo001_snap = json.loads(
+        Path("/root/results/WO-001/raw/inputs_snapshot.json").read_text()
+    )
+    spec = importlib.util.spec_from_file_location(
+        "wo_002b_judge", "/root/scripts/wo_002b_judge.py"
+    )
+    mod = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(mod)
+    summary = mod.run_judge(
+        str(results_dir),
+        wo001_snap["claims_detection_grading_prompt"],
+        wo001_snap["correct_concept_identification_grading_prompt"],
+    )
+    volume.commit()
+    return {
+        "blocked": False,
+        "judge_summary": summary,
+        "judge_summary.json": json.dumps(summary, indent=2),
+    }
+
+
 def _read_revision_sha(rev_path: Path) -> str | None:
     """Parse revision_sha from model_revision.yaml without PyYAML (local entrypoint)."""
     if not rev_path.exists():
@@ -579,9 +771,78 @@ def main(action: str = "help"):
         print(
             "Usage: modal run modal_app.py --action "
             "[freeze|download|manifest|smoke|all|wo001|wo001_judge|"
-            "wo002_partA|wo002_partB|wo002_judge]"
+            "wo002_partA|wo002_partB|wo002_judge|"
+            "wo002b_partA|wo002b_partB|wo002b_judge]"
         )
         return
+
+    if action in ("wo002b_partA", "wo002b_partB", "wo002b_judge"):
+        sys.path.insert(0, str(root / "src"))
+        rev = _read_revision_sha(root / "configs" / "model_revision.yaml")
+        if not rev:
+            raise SystemExit("missing configs/model_revision.yaml")
+        out_dir = root / "results" / "WO-002b"
+        out_dir.mkdir(parents=True, exist_ok=True)
+        (out_dir / "raw").mkdir(parents=True, exist_ok=True)
+
+        def _pull_volume_b():
+            dest = root / "results"
+            dest.mkdir(parents=True, exist_ok=True)
+            subprocess.check_call(
+                [
+                    "modal",
+                    "volume",
+                    "get",
+                    "--force",
+                    VOLUME_NAME,
+                    "results/WO-002b",
+                    str(dest),
+                ]
+            )
+
+        if action == "wo002b_partA":
+            from sfo.provenance import assert_clean_pushed_main
+
+            gh = assert_clean_pushed_main(str(root))
+            print(f"=== wo_002b_partA git_hash={gh} ===")
+            out = wo_002b_partA.remote(git_hash=gh, revision_sha=rev)
+            (out_dir / "partA_summary.json").write_text(out["partA_summary.json"])
+            _merge_ledger(
+                root / "results" / "budget_ledger.csv", out.get("budget_ledger.csv", "")
+            )
+            _pull_volume_b()
+            print(
+                f"Part A done; l0*={out.get('l0_star')} flag={out.get('l0_flag')}; "
+                f"projected={out.get('projected_hours')}"
+            )
+            if out.get("stopped_before_partB"):
+                print("STOPPED before Part B")
+            return
+
+        if action == "wo002b_partB":
+            from sfo.provenance import assert_clean_pushed_main
+
+            gh = assert_clean_pushed_main(str(root))
+            print(f"=== wo_002b_partB git_hash={gh} ===")
+            out = wo_002b_partB.remote(git_hash=gh, revision_sha=rev)
+            (out_dir / "partB_summary.json").write_text(out["partB_summary.json"])
+            _merge_ledger(
+                root / "results" / "budget_ledger.csv", out.get("budget_ledger.csv", "")
+            )
+            _pull_volume_b()
+            print("Part B done; kl_ratio=", out.get("kl_ratio"))
+            return
+
+        if action == "wo002b_judge":
+            print("=== wo_002b_judge ===")
+            out = wo_002b_judge.remote()
+            if out.get("blocked"):
+                print("JUDGE BLOCKED:", out.get("reason"))
+                return
+            (out_dir / "judge_summary.json").write_text(out["judge_summary.json"])
+            _pull_volume_b()
+            print("Judge complete:", out["judge_summary"])
+            return
 
     if action in ("wo002_partA", "wo002_partB", "wo002_judge"):
         sys.path.insert(0, str(root / "src"))
