@@ -1,0 +1,82 @@
+=== assert Yes/No token ids ===
+Yes=10784 No=3771 OK
+=== SANITY 1: load sparse captures ===
+L45: 38038 entries
+L50: 38038 entries
+SANITY1 PASS
+=== SANITY 2: sparse vs fp32 gate agreement ===
+max_rel=5.3295e-02 median_rel=0.0000e+00 n_fail_3pct=2/300
+D_act_sparse={'L45_g9959': -1189.6, 'L45_g74631': -368.18666666666667, 'L50_g167': -1499.14} wo003={'L45_g9959': -1186.968012084961, 'L45_g74631': -366.4065783691406, 'L50_g167': -1490.7721873982748}
+SANITY2 PASS
+=== load b_enc, Δu, γ, w_dec DLA ===
+unembed=language_model.model.embed_tokens.weight (tied_embed) norm=language_model.model.norm.weight
+‖Δu‖=1.2164 softcap=None
+L45: dla_normed mean=7.8172e-04
+L50: dla_normed mean=4.3113e-04
+=== SANITY 4: gate DLA ===
+L45_g9959: raw=0.3897 normed=2.6035 pctl_n=100.00
+L45_g74631: raw=0.3859 normed=2.5641 pctl_n=100.00
+L50_g167: raw=0.4601 normed=3.0941 pctl_n=100.00
+=== SANITY 3: gate ranks ===
+S1[0] L45_g9959 r=1
+S1[0] L45_g74631 r=3
+S1[0] L50_g167 r=1
+S1[1] L45_g9959 r=1
+S1[1] L45_g74631 r=3
+S1[1] L50_g167 r=1
+S1[2] L45_g9959 r=1
+S1[2] L45_g74631 r=4
+S1[2] L50_g167 r=1
+S1[3] L45_g9959 r=1
+S1[3] L45_g74631 r=3
+S1[3] L50_g167 r=1
+S1[4] L45_g9959 r=1
+S1[4] L45_g74631 r=3
+S1[4] L50_g167 r=1
+S1[5] L45_g9959 r=1
+S1[5] L45_g74631 r=4
+S1[5] L50_g167 r=1
+S4[0] L45_g9959 r=1
+S4[0] L45_g74631 r=None
+S4[0] L50_g167 r=1
+S4[1] L45_g9959 r=None
+S4[1] L45_g74631 r=None
+S4[1] L50_g167 r=None
+S4[2] L45_g9959 r=2
+S4[2] L45_g74631 r=None
+S4[2] L50_g167 r=1
+S4[3] L45_g9959 r=70
+S4[3] L45_g74631 r=None
+S4[3] L50_g167 r=13
+S4[4] L45_g9959 r=1
+S4[4] L45_g74631 r=70
+S4[4] L50_g167 r=1
+=== MAIN per-row analysis ===
+wrote 37772 per-row lines
+=== SANITY 5: noise-floor mean p ===
+noise S1 L45_g74631: mean_p=50.000 n=12
+noise S1 L45_g9959: mean_p=50.000 n=12
+noise S1 L50_g167: mean_p=50.000 n=12
+noise S2 L45_g74631: mean_p=50.000 n=12
+noise S2 L45_g9959: mean_p=50.000 n=12
+noise S2 L50_g167: mean_p=50.000 n=12
+noise S2v L45_g74631: mean_p=50.000 n=4
+noise S2v L45_g9959: mean_p=50.000 n=8
+noise S2v L50_g167: mean_p=50.000 n=4
+noise S3 L45_g74631: mean_p=50.000 n=16
+noise S3 L45_g9959: mean_p=50.000 n=20
+noise S3 L50_g167: mean_p=50.000 n=20
+noise S4 L45_g74631: mean_p=50.000 n=22
+noise S4 L45_g9959: mean_p=50.488 n=82
+noise S4 L50_g167: mean_p=50.549 n=82
+noise S5 L45_g9959: mean_p=51.067 n=82
+noise S5 L50_g167: mean_p=56.250 n=8
+noise S6 L45_g9959: mean_p=51.250 n=16
+noise S6 L50_g167: mean_p=55.000 n=8
+=== aggregate metrics + bootstrap ===
+/root/scripts/wo_003a_analysis.py:1079: RuntimeWarning: Mean of empty slice
+  boots.append(float(np.nanmean(Mc[np.ix_(ip, ic)]) - np.nanmean(Mr[np.ix_(ip, ir)])))
+/root/scripts/wo_003a_analysis.py:455: RuntimeWarning: Mean of empty slice
+  out[b] = np.nanmean(sub)
+wrote metrics.json
+DONE in 304.9s
