@@ -231,8 +231,19 @@ def run_part_b(
             }
 
             trials_path = raw / "partB_trials.jsonl"
+            expected_trials = 900 + 300 + 300 + 50 + 300 + 50
+            skip_gen = False
             if trials_path.exists():
-                trials_path.unlink()
+                n_existing = sum(1 for _ in trials_path.open())
+                if n_existing == expected_trials:
+                    _log(
+                        f"Resuming: found {n_existing} trials on disk; "
+                        "skipping generation, continuing with MMLU/KL"
+                    )
+                    skip_gen = True
+                else:
+                    _log(f"Removing incomplete trials.jsonl ({n_existing} lines)")
+                    trials_path.unlink()
             batch_index = 0
 
             def write_rows(rows: List[dict]):
@@ -325,111 +336,121 @@ def run_part_b(
                     batch_index += 1
                     i += len(chunk)
 
-            # ---- Build specs ----
-            # B-inj: 50×6×3
-            for arm in ("none", "B1", "B1-null"):
-                specs = []
-                for c in concepts_50:
-                    for n in range(1, 7):
-                        specs.append(
-                            {
-                                "condition": "B-inj",
-                                "arm": arm,
-                                "concept": c,
-                                "n": n,
-                            }
-                        )
-                run_batches(specs, steered=True, sample=True, max_tok=max_new, start_mode="trial")
+            # ---- Build specs / generate ----
+            if not skip_gen:
+                # B-inj: 50×6×3
+                for arm in ("none", "B1", "B1-null"):
+                    specs = []
+                    for c in concepts_50:
+                        for n in range(1, 7):
+                            specs.append(
+                                {
+                                    "condition": "B-inj",
+                                    "arm": arm,
+                                    "concept": c,
+                                    "n": n,
+                                }
+                            )
+                    run_batches(
+                        specs, steered=True, sample=True, max_tok=max_new, start_mode="trial"
+                    )
 
-            # B-ctl: 25 repeats × n=1..6 × {none,B1} = 300
-            for arm in ("none", "B1"):
-                specs = []
-                for rep in range(25):
-                    for n in range(1, 7):
-                        specs.append(
-                            {
-                                "condition": "B-ctl",
-                                "arm": arm,
-                                "concept": None,
-                                "n": n,
-                            }
-                        )
-                run_batches(specs, steered=False, sample=True, max_tok=max_new, start_mode="trial")
+                # B-ctl: 25 repeats × n=1..6 × {none,B1} = 300
+                for arm in ("none", "B1"):
+                    specs = []
+                    for rep in range(25):
+                        for n in range(1, 7):
+                            specs.append(
+                                {
+                                    "condition": "B-ctl",
+                                    "arm": arm,
+                                    "concept": None,
+                                    "n": n,
+                                }
+                            )
+                    run_batches(
+                        specs, steered=False, sample=True, max_tok=max_new, start_mode="trial"
+                    )
 
-            # B-fid: 50×2×3 greedy 6 tokens
-            for arm in ("none", "B1", "B1-null"):
-                specs = []
-                for c in concepts_50:
-                    for n in (1, 2):
-                        specs.append(
-                            {
-                                "condition": "B-fid",
-                                "arm": arm,
-                                "concept": c,
-                                "n": n,
-                            }
-                        )
+                # B-fid: 50×2×3 greedy 6 tokens
+                for arm in ("none", "B1", "B1-null"):
+                    specs = []
+                    for c in concepts_50:
+                        for n in (1, 2):
+                            specs.append(
+                                {
+                                    "condition": "B-fid",
+                                    "arm": arm,
+                                    "concept": c,
+                                    "n": n,
+                                }
+                            )
+                    run_batches(
+                        specs,
+                        steered=True,
+                        sample=False,
+                        max_tok=int(cfg["fid_new_tokens"]),
+                        start_mode="fid",
+                    )
+
+                # B-fid0: 50 unsteered
+                specs = [
+                    {"condition": "B-fid0", "arm": "none", "concept": c, "n": 1}
+                    for c in concepts_50
+                ]
                 run_batches(
                     specs,
-                    steered=True,
+                    steered=False,
                     sample=False,
                     max_tok=int(cfg["fid_new_tokens"]),
                     start_mode="fid",
                 )
 
-            # B-fid0: 50 unsteered
-            specs = [
-                {"condition": "B-fid0", "arm": "none", "concept": c, "n": 1}
-                for c in concepts_50
-            ]
-            run_batches(
-                specs,
-                steered=False,
-                sample=False,
-                max_tok=int(cfg["fid_new_tokens"]),
-                start_mode="fid",
-            )
+                # B-exp: 50×2 samples × 3 arms
+                for arm in ("none", "B1", "B1-null"):
+                    specs = []
+                    for c in concepts_50:
+                        for s in (0, 1):
+                            specs.append(
+                                {
+                                    "condition": "B-exp",
+                                    "arm": arm,
+                                    "concept": c,
+                                    "n": s,
+                                }
+                            )
+                    run_batches(
+                        specs,
+                        steered=True,
+                        sample=True,
+                        max_tok=int(cfg["exp_new_tokens"]),
+                        start_mode="one",
+                    )
 
-            # B-exp: 50×2 samples × 3 arms
-            for arm in ("none", "B1", "B1-null"):
-                specs = []
-                for c in concepts_50:
-                    for s in (0, 1):
-                        specs.append(
-                            {
-                                "condition": "B-exp",
-                                "arm": arm,
-                                "concept": c,
-                                "n": s,
-                            }
-                        )
+                # B-exp0
+                specs = [
+                    {"condition": "B-exp0", "arm": "none", "concept": c, "n": 0}
+                    for c in concepts_50
+                ]
                 run_batches(
                     specs,
-                    steered=True,
+                    steered=False,
                     sample=True,
                     max_tok=int(cfg["exp_new_tokens"]),
                     start_mode="one",
                 )
 
-            # B-exp0
-            specs = [
-                {"condition": "B-exp0", "arm": "none", "concept": c, "n": 0}
-                for c in concepts_50
-            ]
-            run_batches(
-                specs,
-                steered=False,
-                sample=True,
-                max_tok=int(cfg["exp_new_tokens"]),
-                start_mode="one",
-            )
-
             n_lines = sum(1 for _ in trials_path.open())
-            expected = 900 + 300 + 300 + 50 + 300 + 50
+            expected = expected_trials
             _log(f"Wrote {n_lines} trials (expected {expected})")
             assert n_lines == expected, f"got {n_lines} != {expected}"
 
             # ---- MMLU ----
+            # Cap batch: full logits [B,T,V] with V≈262k OOMs at batch=32 on long prompts.
+            from contextlib import nullcontext
+
+            cap_batch = min(4, batch_size)
+            torch.cuda.empty_cache()
             _log("Loading MMLU...")
             mmlu_items, mmlu_rev = load_mmlu_validation(n=int(cfg["mmlu_n"]), seed=0)
             cfg_out = {
@@ -453,21 +474,18 @@ def run_part_b(
             mmlu_acc = {}
             for arm_name, (bdirs, bmus, bl0) in arms_b1.items():
                 correct = 0
-                for start in range(0, len(mmlu_items), batch_size):
-                    chunk = mmlu_items[start : start + batch_size]
-                    id_list, starts = [], []
+                for start in range(0, len(mmlu_items), cap_batch):
+                    chunk = mmlu_items[start : start + cap_batch]
+                    id_list = []
                     for item in chunk:
                         messages = [{"role": "user", "content": format_mmlu_user(item)}]
                         ids = format_chat(tokenizer, messages)
                         id_list.append(ids)
-                        starts.append(1)
                     device = next(model.parameters()).device
                     input_ids, attn, pad_lens = pad_batch(tokenizer, id_list, device)
                     st = torch.tensor(
                         [pl + 1 for pl in pad_lens], device=device, dtype=torch.long
                     )
-                    from contextlib import nullcontext
-
                     blk = (
                         mean_ablate_from_l0(model, bl0, bdirs, bmus, st, max_layer=61)
                         if bdirs is not None
@@ -475,15 +493,26 @@ def run_part_b(
                     )
                     with blk:
                         with torch.no_grad():
-                            out = model(input_ids=input_ids, attention_mask=attn)
+                            try:
+                                out = model(
+                                    input_ids=input_ids,
+                                    attention_mask=attn,
+                                    logits_to_keep=1,
+                                )
+                            except TypeError:
+                                out = model(
+                                    input_ids=input_ids, attention_mask=attn
+                                )
                     logits = out.logits[:, -1, :]
                     for j, item in enumerate(chunk):
                         scores = [float(logits[j, tid]) for tid in letter_ids]
                         pred = int(max(range(4), key=lambda k: scores[k]))
                         if pred == int(item["answer"]):
                             correct += 1
+                    del out, logits
                 mmlu_acc[arm_name] = correct / len(mmlu_items)
                 _log(f"MMLU {arm_name}: {mmlu_acc[arm_name]:.4f}")
+                torch.cuda.empty_cache()
 
             # ---- Neutral KL ----
             _log("Loading WikiText chunks...")
@@ -496,21 +525,23 @@ def run_part_b(
             save_jsonl(raw / "wikitext_chunks.jsonl", chunks)
             (raw / "dataset_revisions.json").write_text(json.dumps(cfg_out, indent=2))
 
-            # Update wo_002.yaml revisions into summary
             summary["dataset_revisions"] = cfg_out
 
             kl_means = {}
             bos = tokenizer.bos_token_id
-            for arm_name, (bdirs, bmus, bl0) in [("B1", arms_b1["B1"]), ("B1-null", arms_b1["B1-null"])]:
+            kl_batch = 1  # KL needs full [B,T,V] twice; keep tiny
+            for arm_name, (bdirs, bmus, bl0) in [
+                ("B1", arms_b1["B1"]),
+                ("B1-null", arms_b1["B1-null"]),
+            ]:
                 kls = []
-                for start in range(0, len(chunks), batch_size):
-                    chunk = chunks[start : start + batch_size]
+                for start in range(0, len(chunks), kl_batch):
+                    chunk = chunks[start : start + kl_batch]
                     id_list = []
                     for ch in chunk:
                         ids = tokenizer(
                             ch["text"], add_special_tokens=False, return_tensors="pt"
                         )["input_ids"]
-                        # prepend BOS; take 64 tokens of content + BOS
                         content = ids[0, : int(cfg["wikitext_chunk_tokens"])]
                         row = torch.cat([torch.tensor([bos]), content], dim=0)
                         id_list.append(row.unsqueeze(0))
@@ -520,29 +551,28 @@ def run_part_b(
                         [pl + 1 for pl in pad_lens], device=device, dtype=torch.long
                     )
                     with torch.no_grad():
-                        logits_none = model(input_ids=input_ids, attention_mask=attn).logits
-                    from contextlib import nullcontext
-
+                        logits_none = model(
+                            input_ids=input_ids, attention_mask=attn
+                        ).logits
                     with mean_ablate_from_l0(model, bl0, bdirs, bmus, st, max_layer=61):
                         with torch.no_grad():
-                            logits_arm = model(input_ids=input_ids, attention_mask=attn).logits
-                    # KL per position for non-pad positions >= 1 (after BOS in unpadded; with left pad use attn)
-                    # Use positions where attn==1 and not the first content? Spec: positions ≥ 1
+                            logits_arm = model(
+                                input_ids=input_ids, attention_mask=attn
+                            ).logits
                     log_p = torch.log_softmax(logits_none.float(), dim=-1)
                     log_q = torch.log_softmax(logits_arm.float(), dim=-1)
                     p = log_p.exp()
                     kl_tok = (p * (log_p - log_q)).sum(dim=-1)  # [B,T]
                     for b in range(kl_tok.shape[0]):
-                        # positions with content; skip absolute pos < start (pad + possibly BOS region)
-                        # For each row, absolute positions pad_len ... ; we want abs >= pad_len+1
                         pl = pad_lens[b]
-                        # include from index pl+1 onward (skip BOS at pl)
                         vals = kl_tok[b, pl + 1 :]
                         mask = attn[b, pl + 1 :].bool()
                         if mask.any():
                             kls.append(float(vals[mask].mean().cpu()))
+                    del logits_none, logits_arm, log_p, log_q, p, kl_tok
                 kl_means[arm_name] = float(sum(kls) / len(kls)) if kls else float("nan")
                 _log(f"KL {arm_name}: {kl_means[arm_name]:.6f}")
+                torch.cuda.empty_cache()
 
             summary["mmlu_acc"] = mmlu_acc
             summary["kl_means"] = kl_means
