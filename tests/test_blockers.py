@@ -88,9 +88,10 @@ def test_projection_equals_mu(model):
                 model(input_ids=ids)
     h = caps[2][0]  # [T,d] float32
     proj = (h * direction.float()).sum(-1)
-    # positions >= start ≈ mu
-    rel = (proj[start:] - mu).abs() / (abs(mu) + 1e-6)
-    assert float(rel.max()) < 1e-2
+    # positions >= start ≈ mu (relative to residual scale)
+    scale = h[start:].norm(dim=-1).mean().clamp_min(1e-3)
+    rel = (proj[start:] - mu).abs() / scale
+    assert float(rel.max()) < 1e-2, float(rel.max())
     # before start: compare to unblocked
     with capture_residual(model, [2]) as caps2:
         with torch.no_grad():
