@@ -45,3 +45,6 @@ venv/
 # Modal / local run artifacts that shouldn't be committed by accident
 .modal/
 tmp/
+
+# Large WO raw dumps (>50 MB); kept on Modal volume
+results/WO-003a/raw/per_row.jsonl
