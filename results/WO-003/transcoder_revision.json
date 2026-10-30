@@ -1,0 +1,22 @@
+{
+  "repo_id": "google/gemma-scope-2-27b-it",
+  "revision": "5c58dd4cddd52cef653059d85e12a86bf6222a28",
+  "downloaded_at_unix": 1793399837.234073,
+  "target_dir": "/models/gemmascope2-27b-it",
+  "files": {
+    "transcoder_all/layer_45_width_262k_l0_big_affine/config.json": "/__modal/volumes/vo-FHsVoogrLeAfTM38c8mQf6/gemmascope2-27b-it/transcoder_all/layer_45_width_262k_l0_big_affine/config.json",
+    "transcoder_all/layer_45_width_262k_l0_big_affine/params.safetensors": "/__modal/volumes/vo-FHsVoogrLeAfTM38c8mQf6/gemmascope2-27b-it/transcoder_all/layer_45_width_262k_l0_big_affine/params.safetensors",
+    "transcoder_all/layer_50_width_262k_l0_big_affine/config.json": "/__modal/volumes/vo-FHsVoogrLeAfTM38c8mQf6/gemmascope2-27b-it/transcoder_all/layer_50_width_262k_l0_big_affine/config.json",
+    "transcoder_all/layer_50_width_262k_l0_big_affine/params.safetensors": "/__modal/volumes/vo-FHsVoogrLeAfTM38c8mQf6/gemmascope2-27b-it/transcoder_all/layer_50_width_262k_l0_big_affine/params.safetensors"
+  },
+  "sizes_bytes": {
+    "transcoder_all/layer_45_width_262k_l0_big_affine/config.json": 309,
+    "transcoder_all/layer_45_width_262k_l0_big_affine/params.safetensors": 11392013824,
+    "transcoder_all/layer_50_width_262k_l0_big_affine/config.json": 309,
+    "transcoder_all/layer_50_width_262k_l0_big_affine/params.safetensors": 11392013824
+  },
+  "layer_dirs": {
+    "45": "/models/gemmascope2-27b-it/transcoder_all/layer_45_width_262k_l0_big_affine",
+    "50": "/models/gemmascope2-27b-it/transcoder_all/layer_50_width_262k_l0_big_affine"
+  }
+}
