@@ -1,0 +1,47 @@
+# Model weights and caches
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.gguf
+*.onnx
+models/
+weights/
+checkpoints/
+.cache/
+huggingface/
+*.msgpack
+
+# Secrets / env
+.env
+.env.*
+!.env.example
+*.pem
+credentials.json
+secrets/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+.python-version
+
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*~
+
+# Modal / local run artifacts that shouldn't be committed by accident
+.modal/
+tmp/

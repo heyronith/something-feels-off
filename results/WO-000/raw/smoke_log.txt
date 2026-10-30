@@ -1,0 +1,194 @@
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+
+Loading weights:   0%|          | 0/1247 [00:00<?, ?it/s]
+Loading weights:   0%|          | 1/1247 [00:01<31:05,  1.50s/it]
+Loading weights:   0%|          | 2/1247 [00:01<15:50,  1.31it/s]
+Loading weights:   0%|          | 5/1247 [00:01<05:06,  4.06it/s]
+Loading weights:   1%|1         | 14/1247 [00:01<01:25, 14.50it/s]
+Loading weights:   2%|1         | 19/1247 [00:02<01:28, 13.92it/s]
+Loading weights:   2%|2         | 29/1247 [00:02<00:53, 22.62it/s]
+Loading weights:   3%|2         | 33/1247 [00:02<00:58, 20.69it/s]
+Loading weights:   3%|3         | 42/1247 [00:02<00:43, 27.60it/s]
+Loading weights:   4%|3         | 46/1247 [00:03<00:50, 23.97it/s]
+Loading weights:   4%|4         | 53/1247 [00:03<00:45, 26.28it/s]
+Loading weights:   5%|4         | 57/1247 [00:03<00:49, 24.01it/s]
+Loading weights:   5%|5         | 64/1247 [00:03<00:39, 30.02it/s]
+Loading weights:   6%|5         | 69/1247 [00:03<00:40, 29.07it/s]
+Loading weights:   6%|5         | 73/1247 [00:04<00:42, 27.95it/s]
+Loading weights:   6%|6         | 80/1247 [00:04<00:44, 26.27it/s]
+Loading weights:   7%|6         | 83/1247 [00:04<00:44, 26.07it/s]
+Loading weights:   7%|7         | 93/1247 [00:04<00:35, 32.07it/s]
+Loading weights:   8%|7         | 97/1247 [00:05<00:43, 26.21it/s]
+Loading weights:   9%|8         | 106/1247 [00:05<00:35, 32.36it/s]
+Loading weights:   9%|8         | 110/1247 [00:05<00:41, 27.24it/s]
+Loading weights:   9%|9         | 118/1247 [00:05<00:36, 31.08it/s]
+Loading weights:  10%|9         | 122/1247 [00:05<00:43, 25.70it/s]
+Loading weights:  11%|#         | 133/1247 [00:06<00:31, 35.17it/s]
+Loading weights:  11%|#         | 137/1247 [00:06<00:40, 27.71it/s]
+Loading weights:  11%|#1        | 142/1247 [00:06<00:35, 30.88it/s]
+Loading weights:  12%|#1        | 147/1247 [00:06<00:37, 29.37it/s]
+Loading weights:  12%|#2        | 151/1247 [00:06<00:37, 29.17it/s]
+Loading weights:  13%|#2        | 158/1247 [00:06<00:34, 31.75it/s]
+Loading weights:  13%|#2        | 162/1247 [00:07<00:40, 26.59it/s]
+Loading weights:  14%|#3        | 171/1247 [00:07<00:33, 31.77it/s]
+Loading weights:  14%|#4        | 175/1247 [00:07<00:42, 25.49it/s]
+Loading weights:  15%|#4        | 184/1247 [00:07<00:33, 32.07it/s]
+Loading weights:  15%|#5        | 188/1247 [00:08<00:39, 26.77it/s]
+Loading weights:  16%|#5        | 196/1247 [00:08<00:34, 30.74it/s]
+Loading weights:  16%|#6        | 200/1247 [00:08<00:39, 26.49it/s]
+Loading weights:  17%|#6        | 210/1247 [00:08<00:36, 28.67it/s]
+Loading weights:  17%|#7        | 213/1247 [00:08<00:37, 27.92it/s]
+Loading weights:  18%|#7        | 223/1247 [00:09<00:25, 39.67it/s]
+Loading weights:  18%|#8        | 228/1247 [00:09<00:35, 28.44it/s]
+Loading weights:  19%|#8        | 235/1247 [00:09<00:29, 34.35it/s]
+Loading weights:  19%|#9        | 240/1247 [00:09<00:39, 25.80it/s]
+Loading weights:  20%|##        | 250/1247 [00:10<00:30, 32.53it/s]
+Loading weights:  20%|##        | 255/1247 [00:10<00:35, 27.90it/s]
+Loading weights:  21%|##1       | 262/1247 [00:10<00:32, 30.71it/s]
+Loading weights:  21%|##1       | 266/1247 [00:10<00:37, 25.87it/s]
+Loading weights:  22%|##2       | 276/1247 [00:10<00:31, 31.31it/s]
+Loading weights:  22%|##2       | 280/1247 [00:11<00:37, 26.01it/s]
+Loading weights:  23%|##2       | 285/1247 [00:11<00:32, 29.30it/s]
+Loading weights:  23%|##3       | 290/1247 [00:11<00:33, 28.82it/s]
+Loading weights:  24%|##3       | 294/1247 [00:11<00:33, 28.38it/s]
+Loading weights:  24%|##4       | 302/1247 [00:12<00:41, 22.59it/s]
+Loading weights:  25%|##5       | 315/1247 [00:12<00:31, 29.22it/s]
+Loading weights:  26%|##5       | 319/1247 [00:12<00:32, 28.97it/s]
+Loading weights:  26%|##6       | 328/1247 [00:12<00:27, 33.26it/s]
+Loading weights:  27%|##6       | 332/1247 [00:13<00:34, 26.75it/s]
+Loading weights:  27%|##7       | 340/1247 [00:13<00:29, 30.94it/s]
+Loading weights:  28%|##7       | 344/1247 [00:13<00:34, 26.07it/s]
+Loading weights:  28%|##8       | 352/1247 [00:13<00:26, 34.33it/s]
+Loading weights:  29%|##8       | 357/1247 [00:13<00:35, 24.92it/s]
+Loading weights:  29%|##9       | 367/1247 [00:14<00:26, 32.67it/s]
+Loading weights:  30%|##9       | 372/1247 [00:14<00:31, 27.73it/s]
+Loading weights:  30%|###       | 380/1247 [00:14<00:26, 32.25it/s]
+Loading weights:  31%|###       | 384/1247 [00:14<00:32, 26.22it/s]
+Loading weights:  31%|###1      | 392/1247 [00:15<00:27, 30.59it/s]
+Loading weights:  32%|###1      | 396/1247 [00:15<00:33, 25.53it/s]
+Loading weights:  33%|###2      | 406/1247 [00:15<00:25, 32.84it/s]
+Loading weights:  33%|###2      | 410/1247 [00:15<00:32, 25.99it/s]
+Loading weights:  34%|###3      | 419/1247 [00:15<00:25, 32.12it/s]
+Loading weights:  34%|###3      | 423/1247 [00:16<00:31, 26.53it/s]
+Loading weights:  34%|###4      | 430/1247 [00:16<00:27, 29.23it/s]
+Loading weights:  35%|###4      | 434/1247 [00:16<00:31, 25.45it/s]
+Loading weights:  36%|###5      | 444/1247 [00:16<00:25, 31.98it/s]
+Loading weights:  36%|###5      | 448/1247 [00:17<00:30, 26.14it/s]
+Loading weights:  36%|###6      | 453/1247 [00:17<00:26, 29.62it/s]
+Loading weights:  37%|###6      | 459/1247 [00:17<00:31, 24.75it/s]
+Loading weights:  38%|###7      | 469/1247 [00:17<00:22, 34.91it/s]
+Loading weights:  38%|###8      | 474/1247 [00:17<00:29, 26.63it/s]
+Loading weights:  39%|###8      | 482/1247 [00:18<00:25, 29.47it/s]
+Loading weights:  39%|###8      | 486/1247 [00:18<00:30, 24.86it/s]
+Loading weights:  40%|###9      | 495/1247 [00:18<00:24, 30.15it/s]
+Loading weights:  40%|####      | 499/1247 [00:18<00:28, 25.86it/s]
+Loading weights:  41%|####      | 508/1247 [00:19<00:21, 35.17it/s]
+Loading weights:  41%|####1     | 513/1247 [00:19<00:27, 26.51it/s]
+Loading weights:  42%|####1     | 521/1247 [00:19<00:24, 29.11it/s]
+Loading weights:  42%|####2     | 525/1247 [00:19<00:28, 25.67it/s]
+Loading weights:  43%|####2     | 535/1247 [00:19<00:19, 37.18it/s]
+Loading weights:  43%|####3     | 541/1247 [00:20<00:24, 28.43it/s]
+Loading weights:  44%|####3     | 547/1247 [00:20<00:21, 32.91it/s]
+Loading weights:  44%|####4     | 552/1247 [00:20<00:27, 25.02it/s]
+Loading weights:  45%|####5     | 562/1247 [00:21<00:25, 26.95it/s]
+Loading weights:  45%|####5     | 566/1247 [00:21<00:25, 27.10it/s]
+Loading weights:  46%|####6     | 575/1247 [00:21<00:20, 33.17it/s]
+Loading weights:  46%|####6     | 579/1247 [00:21<00:24, 27.54it/s]
+Loading weights:  47%|####6     | 585/1247 [00:21<00:20, 32.09it/s]
+Loading weights:  47%|####7     | 589/1247 [00:21<00:23, 28.16it/s]
+Loading weights:  48%|####7     | 593/1247 [00:22<00:23, 28.10it/s]
+Loading weights:  48%|####8     | 601/1247 [00:22<00:19, 33.32it/s]
+Loading weights:  49%|####8     | 605/1247 [00:22<00:24, 26.21it/s]
+Loading weights:  49%|####9     | 612/1247 [00:22<00:19, 33.37it/s]
+Loading weights:  49%|####9     | 617/1247 [00:22<00:25, 24.92it/s]
+Loading weights:  50%|#####     | 625/1247 [00:23<00:22, 27.77it/s]
+Loading weights:  50%|#####     | 629/1247 [00:23<00:26, 23.66it/s]
+Loading weights:  51%|#####1    | 640/1247 [00:23<00:21, 27.88it/s]
+Loading weights:  52%|#####1    | 644/1247 [00:23<00:22, 27.14it/s]
+Loading weights:  52%|#####2    | 653/1247 [00:24<00:17, 33.42it/s]
+Loading weights:  53%|#####2    | 657/1247 [00:24<00:22, 26.23it/s]
+Loading weights:  53%|#####3    | 664/1247 [00:24<00:21, 27.15it/s]
+Loading weights:  53%|#####3    | 667/1247 [00:24<00:21, 27.10it/s]
+Loading weights:  54%|#####3    | 670/1247 [00:24<00:23, 24.18it/s]
+Loading weights:  54%|#####4    | 677/1247 [00:25<00:20, 28.19it/s]
+Loading weights:  55%|#####4    | 680/1247 [00:25<00:20, 27.50it/s]
+Loading weights:  55%|#####4    | 683/1247 [00:25<00:22, 25.37it/s]
+Loading weights:  55%|#####5    | 690/1247 [00:25<00:16, 34.03it/s]
+Loading weights:  56%|#####5    | 694/1247 [00:25<00:25, 21.95it/s]
+Loading weights:  57%|#####6    | 705/1247 [00:26<00:16, 32.23it/s]
+Loading weights:  57%|#####6    | 709/1247 [00:26<00:20, 25.66it/s]
+Loading weights:  58%|#####7    | 718/1247 [00:26<00:20, 26.17it/s]
+Loading weights:  58%|#####7    | 722/1247 [00:26<00:19, 26.57it/s]
+Loading weights:  59%|#####8    | 731/1247 [00:26<00:15, 33.39it/s]
+Loading weights:  59%|#####8    | 735/1247 [00:27<00:19, 26.74it/s]
+Loading weights:  60%|#####9    | 744/1247 [00:27<00:15, 32.92it/s]
+Loading weights:  60%|#####9    | 748/1247 [00:27<00:18, 26.52it/s]
+Loading weights:  61%|######    | 757/1247 [00:27<00:18, 27.06it/s]
+Loading weights:  61%|######    | 760/1247 [00:28<00:18, 26.19it/s]
+Loading weights:  62%|######1   | 768/1247 [00:28<00:16, 28.56it/s]
+Loading weights:  62%|######1   | 771/1247 [00:28<00:16, 28.77it/s]
+Loading weights:  62%|######2   | 774/1247 [00:28<00:17, 26.82it/s]
+Loading weights:  63%|######2   | 780/1247 [00:28<00:14, 33.32it/s]
+Loading weights:  63%|######2   | 784/1247 [00:28<00:16, 27.36it/s]
+Loading weights:  63%|######3   | 788/1247 [00:29<00:16, 27.42it/s]
+Loading weights:  64%|######3   | 796/1247 [00:29<00:13, 32.87it/s]
+Loading weights:  64%|######4   | 800/1247 [00:29<00:17, 25.46it/s]
+Loading weights:  67%|######7   | 840/1247 [00:29<00:04, 90.93it/s]
+Loading weights:  70%|#######   | 874/1247 [00:29<00:02, 138.90it/s]
+Loading weights:  78%|#######8  | 978/1247 [00:29<00:00, 329.47it/s]
+Loading weights:  84%|########4 | 1052/1247 [00:29<00:00, 425.81it/s]
+Loading weights:  92%|#########1| 1146/1247 [00:30<00:00, 554.01it/s]
+Loading weights: 100%|##########| 1247/1247 [00:30<00:00, 41.37it/s] 
+[PASS] load: {"n_layers": 62, "d_model": 5376, "dtype": "bfloat16", "peak_mem_gb_after_load": 51.09765625}
+TOKENIZATION prompt='What is the capital of France?'
+  formatted='<bos><start_of_turn>user\nWhat is the capital of France?<end_of_turn>\n<start_of_turn>model\n'
+  token_ids=[2, 105, 2364, 107, 3689, 563, 506, 5279, 529, 7001, 236881, 106, 107, 105, 4368, 107]
+  decoded_tokens=['<bos>', '<start_of_turn>', 'user', '\n', 'What', ' is', ' the', ' capital', ' of', ' France', '?', '<end_of_turn>', '\n', '<start_of_turn>', 'model', '\n']
+  bos_count=1
+TOKENIZATION prompt='Write a haiku about rain.'
+  formatted='<bos><start_of_turn>user\nWrite a haiku about rain.<end_of_turn>\n<start_of_turn>model\n'
+  token_ids=[2, 105, 2364, 107, 6974, 496, 678, 20517, 1003, 6927, 236761, 106, 107, 105, 4368, 107]
+  decoded_tokens=['<bos>', '<start_of_turn>', 'user', '\n', 'Write', ' a', ' ha', 'iku', ' about', ' rain', '.', '<end_of_turn>', '\n', '<start_of_turn>', 'model', '\n']
+  bos_count=1
+TOKENIZATION prompt='Is this conversation part of an evaluation?'
+  formatted='<bos><start_of_turn>user\nIs this conversation part of an evaluation?<end_of_turn>\n<start_of_turn>model\n'
+  token_ids=[2, 105, 2364, 107, 4602, 672, 12309, 912, 529, 614, 12207, 236881, 106, 107, 105, 4368, 107]
+  decoded_tokens=['<bos>', '<start_of_turn>', 'user', '\n', 'Is', ' this', ' conversation', ' part', ' of', ' an', ' evaluation', '?', '<end_of_turn>', '\n', '<start_of_turn>', 'model', '\n']
+  bos_count=1
+TOKENIZATION prompt='Explain photosynthesis in one sentence.'
+  formatted='<bos><start_of_turn>user\nExplain photosynthesis in one sentence.<end_of_turn>\n<start_of_turn>model\n'
+  token_ids=[2, 105, 2364, 107, 155122, 93036, 528, 886, 13315, 236761, 106, 107, 105, 4368, 107]
+  decoded_tokens=['<bos>', '<start_of_turn>', 'user', '\n', 'Explain', ' photosynthesis', ' in', ' one', ' sentence', '.', '<end_of_turn>', '\n', '<start_of_turn>', 'model', '\n']
+  bos_count=1
+TOKENIZATION prompt='Do you detect an injected thought? Answer yes or no.'
+  formatted='<bos><start_of_turn>user\nDo you detect an injected thought? Answer yes or no.<end_of_turn>\n<start_of_turn>model\n'
+  token_ids=[2, 105, 2364, 107, 6294, 611, 6440, 614, 35143, 3305, 236881, 25685, 11262, 653, 951, 236761, 106, 107, 105, 4368, 107]
+  decoded_tokens=['<bos>', '<start_of_turn>', 'user', '\n', 'Do', ' you', ' detect', ' an', ' injected', ' thought', '?', ' Answer', ' yes', ' or', ' no', '.', '<end_of_turn>', '\n', '<start_of_turn>', 'model', '\n']
+  bos_count=1
+[PASS] tokenization: {"prompts": [{"prompt": "What is the capital of France?", "formatted": "<bos><start_of_turn>user\nWhat is the capital of France?<end_of_turn>\n<start_of_turn>model\n", "token_ids": [2, 105, 2364, 107, 3689, 563, 506, 5279, 529, 7001, 236881, 106, 107, 105, 4368, 107], "decoded_tokens": ["<bos>", "<start_of_turn>", "user", "\n", "What", " is", " the", " capital", " of", " France", "?", "<end_of_turn>", "\n", "<start_of_turn>", "model", "\n"], "bos_count": 1, "single_bos": true}, {"prompt": "Write a haiku about rain.", "formatted": "<bos><start_of_turn>user\nWrite a haiku about rain.<end_of_turn>\n<start_of_turn>model\n", "token_ids": [2, 105, 2364, 107, 6974, 496, 678, 20517, 1003, 6927, 236761, 106, 107, 105, 4368, 107], "decoded_tokens": ["<bos>", "<start_of_turn>", "user", "\n", "Write", " a", " ha", "iku", " about", " rain", ".", "<end_of_turn>", "\n", "<start_of_turn>", "model", "\n"], "bos_count": 1, "single_bos": true}, {"prompt": "Is this conversation part of an evaluation?", "formatted": "<bos><start_of_turn>user\nIs this conversation part of an evaluation?<end_of_turn>\n<start_of_turn>model\n", "token_ids": [2, 105, 2364, 107, 4602, 672, 12309, 912, 529, 614, 12207, 236881, 106, 107, 105, 4368, 107], "decoded_tokens": ["<bos>", "<start_of_turn>", "user", "\n", "Is", " this", " conversation", " part", " of", " an", " evaluation", "?", "<end_of_turn>", "\n", "<start_of_turn>", "model", "\n"], "bos_count": 1, "single_bos": true}, {"prompt": "Explain photosynthesis in one sentence.", "formatted": "<bos><start_of_turn>user\nExplain photosynthesis in one sentence.<end_of_turn>\n<start_of_turn>model\n", "token_ids": [2, 105, 2364, 107, 155122, 93036, 528, 886, 13315, 236761, 106, 107, 105, 4368, 107], "decoded_tokens": ["<bos>", "<start_of_turn>", "user", "\n", "Explain", " photosynthesis", " in", " one", " sentence", ".", "<end_of_turn>", "\n", "<start_of_turn>", "model", "\n"], "bos_count": 1, "single_bos": true}, {"prompt": "Do you detect an injected thought? Answer yes or no.", "formatted": "<bos><start_of_turn>user\nDo you detect an injected thought? Answer yes or no.<end_of_turn>\n<start_of_turn>model\n", "token_ids": [2, 105, 2364, 107, 6294, 611, 6440, 614, 35143, 3305, 236881, 25685, 11262, 653, 951, 236761, 106, 107, 105, 4368, 107], "decoded_tokens": ["<bos>", "<start_of_turn>", "user", "\n", "Do", " you", " detect", " an", " injected", " thought", "?", " Answer", " yes", " or", " no", ".", "<end_of_turn>", "\n", "<start_of_turn>", "model", "\n"], "bos_count": 1, "single_bos": true}]}
+[PASS] sanity_forward: {"top5": [{"token_id": 818, "token": "The", "logit": 68.0}, {"token_id": 50429, "token": "Paris", "logit": 44.25}, {"token_id": 669, "token": " The", "logit": 39.75}, {"token_id": 1018, "token": "**", "logit": 39.25}, {"token_id": 1390, "token": "...", "logit": 38.0}], "prompt": "Complete the sentence: The capital of France is"}
+SANITY top-5: [{'token_id': 818, 'token': 'The', 'logit': 68.0}, {'token_id': 50429, 'token': 'Paris', 'logit': 44.25}, {'token_id': 669, 'token': ' The', 'logit': 39.75}, {'token_id': 1018, 'token': '**', 'logit': 39.25}, {'token_id': 1390, 'token': '...', 'logit': 38.0}]
+[PASS] determinism: {"bit_identical": true}
+[PASS] zero_hook: {"bit_identical": true, "layer": 37}
+[PASS] nonzero_hook: {"r": 95229.6640625, "scale": 380918.65625, "max_abs_delta_logit": 63.21875, "top5_before": [{"token_id": 818, "token": "The", "logit": 68.0}, {"token_id": 50429, "token": "Paris", "logit": 44.25}, {"token_id": 669, "token": " The", "logit": 39.75}, {"token_id": 1018, "token": "**", "logit": 39.25}, {"token_id": 1390, "token": "...", "logit": 38.0}], "top5_after": [{"token_id": 236743, "token": " ", "logit": 44.5}, {"token_id": 5158, "token": " active", "logit": 39.0}, {"token_id": 24537, "token": " encontrar", "logit": 38.0}, {"token_id": 8179, "token": " ont", "logit": 36.25}, {"token_id": 27037, "token": " ents", "logit": 35.0}]}
+NONZERO r=95229.6640625 scale=380918.65625 max|Δlogit|=63.21875
+  top5_before=[{'token_id': 818, 'token': 'The', 'logit': 68.0}, {'token_id': 50429, 'token': 'Paris', 'logit': 44.25}, {'token_id': 669, 'token': ' The', 'logit': 39.75}, {'token_id': 1018, 'token': '**', 'logit': 39.25}, {'token_id': 1390, 'token': '...', 'logit': 38.0}]
+  top5_after=[{'token_id': 236743, 'token': ' ', 'logit': 44.5}, {'token_id': 5158, 'token': ' active', 'logit': 39.0}, {'token_id': 24537, 'token': ' encontrar', 'logit': 38.0}, {'token_id': 8179, 'token': ' ont', 'logit': 36.25}, {'token_id': 27037, 'token': ' ents', 'logit': 35.0}]
+[PASS] hook_removal: {"bit_identical_to_baseline": true}
+[PASS] capture: {"37": {"shape": [1, 16, 5376], "finite": true}, "45": {"shape": [1, 16, 5376], "finite": true}}
+GENERATION unhooked:
+<bos><start_of_turn>user
+Write a haiku about rain.<end_of_turn>
+<start_of_turn>model
+Silver drops descend,
+Washing the world clean and new,
+Earth drinks, sighs content.<end_of_turn>
+GENERATION hooked:
+<bos><start_of_turn>user
+Write a haiku about rain.<end_of_turn>
+<start_of_turn>model
+                              
+[PASS] generation: {"unhooked_text": "<bos><start_of_turn>user\nWrite a haiku about rain.<end_of_turn>\n<start_of_turn>model\nSilver drops descend,\nWashing the world clean and new,\nEarth drinks, sighs content.<end_of_turn>", "hooked_text": "<bos><start_of_turn>user\nWrite a haiku about rain.<end_of_turn>\n<start_of_turn>model\n                              ", "new_tokens": 30}
+[PASS] throughput: {"fwd_b8_t256_sec": 0.6282907416000001, "gen_b8_t48_tok_per_sec": 71.34488787408937, "gen_b8_t48_hooked_tok_per_sec": 71.7233967123238, "padding_side": "left"}
+THROUGHPUT {'fwd_b8_t256_sec': 0.6282907416000001, 'gen_b8_t48_tok_per_sec': 71.34488787408937, 'gen_b8_t48_hooked_tok_per_sec': 71.7233967123238, 'padding_side': 'left'}
+Wrote /tmp/results/WO-000/metrics.json

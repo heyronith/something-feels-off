@@ -1,0 +1,2 @@
+wo_id,function,gpu_type,start_utc,end_utc,seconds,est_usd,git_hash
+WO-000,smoke_test,A100-80GB,2026-10-30T13:38:51Z,2026-10-30T13:40:35Z,103.993,0.149691,15ada9730a9a41966fc137018a98d3950f53b2ac

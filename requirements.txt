@@ -1,0 +1,17 @@
+# Pinned top-level deps for something-feels-off (Python 3.11).
+# torch: CUDA 12.6 build from https://download.pytorch.org/whl/cu126
+# transformers: 5.22.1 is the latest stable that loads google/gemma-3-27b-it
+# via AutoModelForCausalLM (Gemma 3 CausalLM path fixed since 4.53.0).
+torch==2.14.1+cu126
+transformers==5.22.1
+accelerate==1.15.0
+safetensors==0.8.0
+huggingface_hub==2.4.0
+numpy==2.4.1
+pandas==2.3.3
+scipy==1.17.0
+scikit-learn==1.9.1
+matplotlib==3.11.2
+PyYAML==6.0.3
+pytest==9.2.0
+modal==1.6.3

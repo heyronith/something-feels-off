@@ -1,0 +1,413 @@
+{
+  "checks": {
+    "load": {
+      "pass": true,
+      "details": {
+        "n_layers": 62,
+        "d_model": 5376,
+        "dtype": "bfloat16",
+        "peak_mem_gb_after_load": 51.09765625
+      }
+    },
+    "tokenization": {
+      "pass": true,
+      "details": {
+        "prompts": [
+          {
+            "prompt": "What is the capital of France?",
+            "formatted": "<bos><start_of_turn>user\nWhat is the capital of France?<end_of_turn>\n<start_of_turn>model\n",
+            "token_ids": [
+              2,
+              105,
+              2364,
+              107,
+              3689,
+              563,
+              506,
+              5279,
+              529,
+              7001,
+              236881,
+              106,
+              107,
+              105,
+              4368,
+              107
+            ],
+            "decoded_tokens": [
+              "<bos>",
+              "<start_of_turn>",
+              "user",
+              "\n",
+              "What",
+              " is",
+              " the",
+              " capital",
+              " of",
+              " France",
+              "?",
+              "<end_of_turn>",
+              "\n",
+              "<start_of_turn>",
+              "model",
+              "\n"
+            ],
+            "bos_count": 1,
+            "single_bos": true
+          },
+          {
+            "prompt": "Write a haiku about rain.",
+            "formatted": "<bos><start_of_turn>user\nWrite a haiku about rain.<end_of_turn>\n<start_of_turn>model\n",
+            "token_ids": [
+              2,
+              105,
+              2364,
+              107,
+              6974,
+              496,
+              678,
+              20517,
+              1003,
+              6927,
+              236761,
+              106,
+              107,
+              105,
+              4368,
+              107
+            ],
+            "decoded_tokens": [
+              "<bos>",
+              "<start_of_turn>",
+              "user",
+              "\n",
+              "Write",
+              " a",
+              " ha",
+              "iku",
+              " about",
+              " rain",
+              ".",
+              "<end_of_turn>",
+              "\n",
+              "<start_of_turn>",
+              "model",
+              "\n"
+            ],
+            "bos_count": 1,
+            "single_bos": true
+          },
+          {
+            "prompt": "Is this conversation part of an evaluation?",
+            "formatted": "<bos><start_of_turn>user\nIs this conversation part of an evaluation?<end_of_turn>\n<start_of_turn>model\n",
+            "token_ids": [
+              2,
+              105,
+              2364,
+              107,
+              4602,
+              672,
+              12309,
+              912,
+              529,
+              614,
+              12207,
+              236881,
+              106,
+              107,
+              105,
+              4368,
+              107
+            ],
+            "decoded_tokens": [
+              "<bos>",
+              "<start_of_turn>",
+              "user",
+              "\n",
+              "Is",
+              " this",
+              " conversation",
+              " part",
+              " of",
+              " an",
+              " evaluation",
+              "?",
+              "<end_of_turn>",
+              "\n",
+              "<start_of_turn>",
+              "model",
+              "\n"
+            ],
+            "bos_count": 1,
+            "single_bos": true
+          },
+          {
+            "prompt": "Explain photosynthesis in one sentence.",
+            "formatted": "<bos><start_of_turn>user\nExplain photosynthesis in one sentence.<end_of_turn>\n<start_of_turn>model\n",
+            "token_ids": [
+              2,
+              105,
+              2364,
+              107,
+              155122,
+              93036,
+              528,
+              886,
+              13315,
+              236761,
+              106,
+              107,
+              105,
+              4368,
+              107
+            ],
+            "decoded_tokens": [
+              "<bos>",
+              "<start_of_turn>",
+              "user",
+              "\n",
+              "Explain",
+              " photosynthesis",
+              " in",
+              " one",
+              " sentence",
+              ".",
+              "<end_of_turn>",
+              "\n",
+              "<start_of_turn>",
+              "model",
+              "\n"
+            ],
+            "bos_count": 1,
+            "single_bos": true
+          },
+          {
+            "prompt": "Do you detect an injected thought? Answer yes or no.",
+            "formatted": "<bos><start_of_turn>user\nDo you detect an injected thought? Answer yes or no.<end_of_turn>\n<start_of_turn>model\n",
+            "token_ids": [
+              2,
+              105,
+              2364,
+              107,
+              6294,
+              611,
+              6440,
+              614,
+              35143,
+              3305,
+              236881,
+              25685,
+              11262,
+              653,
+              951,
+              236761,
+              106,
+              107,
+              105,
+              4368,
+              107
+            ],
+            "decoded_tokens": [
+              "<bos>",
+              "<start_of_turn>",
+              "user",
+              "\n",
+              "Do",
+              " you",
+              " detect",
+              " an",
+              " injected",
+              " thought",
+              "?",
+              " Answer",
+              " yes",
+              " or",
+              " no",
+              ".",
+              "<end_of_turn>",
+              "\n",
+              "<start_of_turn>",
+              "model",
+              "\n"
+            ],
+            "bos_count": 1,
+            "single_bos": true
+          }
+        ]
+      }
+    },
+    "sanity_forward": {
+      "pass": true,
+      "details": {
+        "top5": [
+          {
+            "token_id": 818,
+            "token": "The",
+            "logit": 68.0
+          },
+          {
+            "token_id": 50429,
+            "token": "Paris",
+            "logit": 44.25
+          },
+          {
+            "token_id": 669,
+            "token": " The",
+            "logit": 39.75
+          },
+          {
+            "token_id": 1018,
+            "token": "**",
+            "logit": 39.25
+          },
+          {
+            "token_id": 1390,
+            "token": "...",
+            "logit": 38.0
+          }
+        ],
+        "prompt": "Complete the sentence: The capital of France is"
+      }
+    },
+    "determinism": {
+      "pass": true,
+      "details": {
+        "bit_identical": true
+      }
+    },
+    "zero_hook": {
+      "pass": true,
+      "details": {
+        "bit_identical": true,
+        "layer": 37
+      }
+    },
+    "nonzero_hook": {
+      "pass": true,
+      "details": {
+        "r": 95229.6640625,
+        "scale": 380918.65625,
+        "max_abs_delta_logit": 63.21875,
+        "top5_before": [
+          {
+            "token_id": 818,
+            "token": "The",
+            "logit": 68.0
+          },
+          {
+            "token_id": 50429,
+            "token": "Paris",
+            "logit": 44.25
+          },
+          {
+            "token_id": 669,
+            "token": " The",
+            "logit": 39.75
+          },
+          {
+            "token_id": 1018,
+            "token": "**",
+            "logit": 39.25
+          },
+          {
+            "token_id": 1390,
+            "token": "...",
+            "logit": 38.0
+          }
+        ],
+        "top5_after": [
+          {
+            "token_id": 236743,
+            "token": " ",
+            "logit": 44.5
+          },
+          {
+            "token_id": 5158,
+            "token": " active",
+            "logit": 39.0
+          },
+          {
+            "token_id": 24537,
+            "token": " encontrar",
+            "logit": 38.0
+          },
+          {
+            "token_id": 8179,
+            "token": " ont",
+            "logit": 36.25
+          },
+          {
+            "token_id": 27037,
+            "token": " ents",
+            "logit": 35.0
+          }
+        ]
+      }
+    },
+    "hook_removal": {
+      "pass": true,
+      "details": {
+        "bit_identical_to_baseline": true
+      }
+    },
+    "capture": {
+      "pass": true,
+      "details": {
+        "37": {
+          "shape": [
+            1,
+            16,
+            5376
+          ],
+          "finite": true
+        },
+        "45": {
+          "shape": [
+            1,
+            16,
+            5376
+          ],
+          "finite": true
+        }
+      }
+    },
+    "generation": {
+      "pass": true,
+      "details": {
+        "unhooked_text": "<bos><start_of_turn>user\nWrite a haiku about rain.<end_of_turn>\n<start_of_turn>model\nSilver drops descend,\nWashing the world clean and new,\nEarth drinks, sighs content.<end_of_turn>",
+        "hooked_text": "<bos><start_of_turn>user\nWrite a haiku about rain.<end_of_turn>\n<start_of_turn>model\n                              ",
+        "new_tokens": 30
+      }
+    },
+    "throughput": {
+      "pass": true,
+      "details": {
+        "fwd_b8_t256_sec": 0.6282907416000001,
+        "gen_b8_t48_tok_per_sec": 71.34488787408937,
+        "gen_b8_t48_hooked_tok_per_sec": 71.7233967123238,
+        "padding_side": "left"
+      }
+    }
+  },
+  "model": {
+    "id": "google/gemma-3-27b-it",
+    "revision_sha": "005ad3404e59d6023443cb575daa05336842228a",
+    "n_layers": 62,
+    "d_model": 5376,
+    "dtype": "bfloat16",
+    "peak_mem_gb_after_load": 51.09765625
+  },
+  "throughput": {
+    "fwd_b8_t256_sec": 0.6282907416000001,
+    "gen_b8_t48_tok_per_sec": 71.34488787408937,
+    "gen_b8_t48_hooked_tok_per_sec": 71.7233967123238
+  },
+  "env": {
+    "python": "3.11.12",
+    "torch": "2.14.1+cu126",
+    "transformers": "5.22.1",
+    "cuda": "12.6",
+    "gpu_name": "NVIDIA A100-SXM4-80GB"
+  },
+  "git_hash": "15ada9730a9a41966fc137018a98d3950f53b2ac"
+}

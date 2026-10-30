@@ -1,0 +1,3 @@
+[submodule "third_party/introspection-mechanisms"]
+	path = third_party/introspection-mechanisms
+	url = https://github.com/safety-research/introspection-mechanisms.git
