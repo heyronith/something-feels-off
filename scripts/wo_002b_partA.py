@@ -227,10 +227,12 @@ def run_part_a(
                 "fid_prefill": prefill,
             }
 
-            # Sanity 2 (GPU): twin logits == unpaired; greedy paired_generate == HF
-            _log("SANITY2 GPU: twin==unpaired and greedy paired_generate==HF (2 prompts)...")
+            # Sanity 2 (GPU): (i) twin matches unsteered twin in same batch size
+            # (CUDA GEMM can differ B=1 vs B=2, so compare within paired batch);
+            # also twin ≈ unpaired within loose rtol. (iv) greedy paired == HF.
+            _log("SANITY2 GPU: twin integrity + greedy paired_generate==HF (2 prompts)...")
             for pi, trial_n in enumerate((1, 2)):
-                text_i, ids_i, sp_i = build_introspection_prompt(tokenizer, trial_n)
+                _text_i, ids_i, sp_i = build_introspection_prompt(tokenizer, trial_n)
                 ids_i = ids_i.to(device)
                 attn_i = torch.ones_like(ids_i)
                 starts_i = torch.tensor([sp_i], device=device, dtype=torch.long)
@@ -239,16 +241,26 @@ def run_part_a(
                     torch.randn(1, d_model, generator=g).to(device=device, dtype=torch.bfloat16)
                     * 0.01
                 )
+                zeros = torch.zeros(1, d_model, device=device, dtype=torch.bfloat16)
                 with torch.no_grad():
                     base = model(input_ids=ids_i, attention_mask=attn_i).logits
-                    logits_2b = paired_forward_logits(
+                    logits_steer = paired_forward_logits(
                         model, ids_i, attn_i, starts_i, sv, layer_steer, None, None
                     )
-                twin_logits = logits_2b[1:]
-                assert torch.allclose(
-                    twin_logits.float(), base.float(), atol=1e-2, rtol=1e-2
-                ), f"SANITY2 twin mismatch prompt {pi}"
-                zeros = torch.zeros(1, d_model, device=device, dtype=torch.bfloat16)
+                    logits_zero = paired_forward_logits(
+                        model, ids_i, attn_i, starts_i, zeros, layer_steer, None, None
+                    )
+                twin_s = logits_steer[1:]
+                twin_z = logits_zero[1:]
+                # Steering must not leak into twin (same paired layout)
+                assert torch.equal(twin_s, twin_z), (
+                    f"SANITY2 steering leaked into twin prompt {pi}"
+                )
+                # Twin ≈ unpaired (bf16/CUDA: allow relative slack)
+                rel = (twin_s.float() - base.float()).abs() / (base.float().abs() + 1.0)
+                assert float(rel.max()) < 5e-2, (
+                    f"SANITY2 twin≈unpaired failed prompt {pi}: max_rel={float(rel.max())}"
+                )
                 with torch.no_grad():
                     hf = model.generate(
                         input_ids=ids_i,
