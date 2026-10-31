@@ -1,0 +1,12 @@
+{
+  "wo_id": "WO-005-judge",
+  "git_hash": "8d87319d52408c9ea5de8522271ff1c15c4c8028",
+  "n_rows": 1800,
+  "n_calls": 1824,
+  "parse_failures": 0,
+  "est_usd": 0.1883524,
+  "prompt_tokens": 463585,
+  "completion_tokens": 1824,
+  "seconds": 124.712047175,
+  "status": "COMPLETE"
+}
