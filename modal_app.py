@@ -926,6 +926,92 @@ def wo_003a_analysis(git_hash: str) -> dict:
     }
 
 
+@app.function(
+    gpu="A100-80GB",
+    volumes={"/models": volume},
+    secrets=[hf_secret],
+    timeout=90 * 60,
+    cpu=GPU_CPU_CORES,
+    memory=GPU_MEMORY_MIB,
+)
+def wo_004_run(git_hash: str, revision_sha: str) -> dict:
+    """GPU: WO-004 causal gate clamp / sham / clampMLP experiment."""
+    import importlib.util
+    import sys
+    from pathlib import Path
+
+    results_dir = Path(f"{VOLUME_RESULTS}/WO-004")
+    results_dir.mkdir(parents=True, exist_ok=True)
+    (results_dir / "raw").mkdir(parents=True, exist_ok=True)
+    ledger_path = Path(VOLUME_LEDGER)
+    ledger_path.parent.mkdir(parents=True, exist_ok=True)
+    log_path = results_dir / "raw" / "sanity_log.txt"
+
+    class Tee:
+        def __init__(self, *streams):
+            self.streams = streams
+
+        def write(self, data):
+            for s in self.streams:
+                s.write(data)
+                s.flush()
+
+        def flush(self):
+            for s in self.streams:
+                s.flush()
+
+    spec = importlib.util.spec_from_file_location(
+        "wo_004_run", "/root/scripts/wo_004_run.py"
+    )
+    mod = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    sys.modules[spec.name] = mod
+
+    def _commit():
+        volume.commit()
+
+    with open(log_path, "w") as logf:
+        old_out, old_err = sys.stdout, sys.stderr
+        sys.stdout = Tee(old_out, logf)
+        sys.stderr = Tee(old_err, logf)
+        try:
+            spec.loader.exec_module(mod)
+            summary = mod.run_wo_004(
+                model_dir=MODEL_DIR,
+                revision_sha=revision_sha,
+                config_path="/root/configs/wo_004.yaml",
+                results_dir=str(results_dir),
+                ledger_path=str(ledger_path),
+                transcoder_root="/models/gemmascope2-27b-it/transcoder_all",
+                wo001_vectors_path="/root/results/WO-001/raw/concept_vectors_L37.pt",
+                wo003_logits_path="/root/results/WO-003/raw/logits_ld.jsonl",
+                git_hash_str=git_hash,
+                gpu_type="A100-80GB",
+                n_cores=GPU_CPU_CORES,
+                mem_gib=GPU_MEMORY_GIB,
+                volume_commit=_commit,
+            )
+        finally:
+            sys.stdout = old_out
+            sys.stderr = old_err
+            _commit()
+
+    import json
+
+    return {
+        "status": (summary or {}).get("status"),
+        "stopped": bool(
+            (summary or {}).get("stopped") or str((summary or {}).get("status", "")).startswith("STOPPED")
+        ),
+        "n_rows": (summary or {}).get("n_rows"),
+        "total_seconds": (summary or {}).get("total_seconds"),
+        "budget_ledger.csv": ledger_path.read_text() if ledger_path.exists() else "",
+        "run_summary.json": (results_dir / "run_summary.json").read_text()
+        if (results_dir / "run_summary.json").exists()
+        else json.dumps(summary or {}, indent=2, default=str),
+    }
+
+
 def _read_revision_sha(rev_path: Path) -> str | None:
     """Parse revision_sha from model_revision.yaml without PyYAML (local entrypoint)."""
     if not rev_path.exists():
@@ -972,11 +1058,11 @@ def main(action: str = "help"):
             "[freeze|download|manifest|smoke|all|wo001|wo001_judge|"
             "wo002_partA|wo002_partB|wo002_judge|"
             "wo002b_partA|wo002b_partB|wo002b_judge|"
-            "wo003_download|wo003_run|wo003a]"
+            "wo003_download|wo003_run|wo003a|wo004]"
         )
         return
 
-    if action in ("wo003_download", "wo003_run", "wo003a"):
+    if action in ("wo003_download", "wo003_run", "wo003a", "wo004"):
         sys.path.insert(0, str(root / "src"))
         rev = _read_revision_sha(root / "configs" / "model_revision.yaml")
         if not rev:
@@ -1011,6 +1097,21 @@ def main(action: str = "help"):
                     "--force",
                     VOLUME_NAME,
                     "results/WO-003a",
+                    str(dest),
+                ]
+            )
+
+        def _pull_wo004():
+            dest = root / "results"
+            dest.mkdir(parents=True, exist_ok=True)
+            subprocess.check_call(
+                [
+                    "modal",
+                    "volume",
+                    "get",
+                    "--force",
+                    VOLUME_NAME,
+                    "results/WO-004",
                     str(dest),
                 ]
             )
@@ -1051,6 +1152,32 @@ def main(action: str = "help"):
             )
             _pull_wo003a()
             print("WO-003a status:", out.get("status"), "seconds=", out.get("seconds"))
+            return
+
+        if action == "wo004":
+            from sfo.provenance import assert_clean_pushed_main
+
+            gh = assert_clean_pushed_main(str(root))
+            out4 = root / "results" / "WO-004"
+            out4.mkdir(parents=True, exist_ok=True)
+            (out4 / "raw").mkdir(parents=True, exist_ok=True)
+            print(f"=== wo_004_run git_hash={gh} ===")
+            out = wo_004_run.remote(git_hash=gh, revision_sha=rev)
+            (out4 / "run_summary.json").write_text(out["run_summary.json"])
+            _merge_ledger(
+                root / "results" / "budget_ledger.csv", out.get("budget_ledger.csv", "")
+            )
+            _pull_wo004()
+            print(
+                "WO-004 run status:",
+                out.get("status"),
+                "stopped=",
+                out.get("stopped"),
+                "n_rows=",
+                out.get("n_rows"),
+                "sec=",
+                out.get("total_seconds"),
+            )
             return
 
     if action in ("wo002b_partA", "wo002b_partB", "wo002b_judge"):
