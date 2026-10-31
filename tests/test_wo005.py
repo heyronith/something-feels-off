@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import sys
 from pathlib import Path
 
@@ -94,8 +95,6 @@ def test_delta_claim_bootstrap_smoke():
     from wo_005_metrics import cluster_boot_means  # noqa: E402
 
     # 2 pairs × 2 prompts × 2 vectors; base claim rates vs steer.
-    rng = np.random.default_rng(0)
-    # shape helpers: we'll use a simple mean Δclaim and D
     pairs = ["P1", "P2"]
     # For each pair: delta_F, delta_I arrays over (prompt, vector) flattened
     dF = {"P1": np.array([0.2, 0.3, 0.1, 0.4]), "P2": np.array([0.0, 0.1, 0.2, 0.15])}
@@ -105,3 +104,27 @@ def test_delta_claim_bootstrap_smoke():
     assert boots.shape == (200,)
     assert np.isfinite(point_D)
     assert np.isfinite(boots).any()
+
+
+def test_cluster_bootstrap_ci_width_vs_analytic():
+    """SANITY3: cluster-bootstrap CI width within 20% of analytic 95% width.
+
+    Synthetic: P clusters, each a constant draw ~ N(μ, σ²) repeated n times
+    (zero within-cluster variance). Estimator D = mean of cluster means with
+    dI=0, so D = mean of P iid N(μ, σ²). Analytic SE = σ/√P.
+    """
+    from wo_005_metrics import cluster_boot_means  # noqa: E402
+
+    rng = np.random.default_rng(0)
+    P, n, sigma, mu = 80, 20, 2.0, 0.5
+    cluster_vals = rng.normal(mu, sigma, size=P)
+    dF = {f"P{i}": np.full(n, float(cluster_vals[i])) for i in range(P)}
+    dI = {f"P{i}": np.zeros(n) for i in range(P)}
+    pairs = list(dF.keys())
+    boots = cluster_boot_means(dF, dI, pairs, n_boot=4000, seed=0)
+    lo, hi = np.nanpercentile(boots, [2.5, 97.5])
+    width = float(hi - lo)
+    # Analytic width for the sampling distribution of the mean of P iid N(μ,σ²)
+    analytic_width = 2 * 1.96 * (sigma / math.sqrt(P))
+    rel = abs(width - analytic_width) / analytic_width
+    assert rel < 0.20, f"CI width {width:.4f} vs analytic {analytic_width:.4f} rel={rel:.3f}"

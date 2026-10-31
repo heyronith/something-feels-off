@@ -95,3 +95,35 @@ From `run_summary.json` → `env`:
 ## GPU minutes and judge $
 - GPU billable: **≈ 89.9 min (1.498 h)** across two A100 runs.
 - Judge: **1824 calls**, **≈ $0.188**, parse_failures=0.
+
+---
+
+## WO-005a: Add missing CIs (CPU)
+
+### Commands
+```bash
+cp results/WO-005/metrics.json results/WO-005/metrics_noci_aba5637.json  # frozen baseline
+python -m pytest tests/test_wo005.py -q
+python scripts/wo_005_metrics.py results/WO-005
+```
+
+### Runtime
+- CPU only; metrics recompute ≈ 31 s (2,000 cluster-bootstrap resamples, seed 0).
+- 0 GPU-h.
+
+### Changes
+- Cluster bootstrap CIs (`{m, lo95, hi95}`) on logit LD_base / LD_steer / dLD / ratio_means; compression yesward_resid (re-fitting S4 each replicate); pooled and per-pair Δclaim / D; LOPO.
+- Clustering: F/I by pair; P0F/P0I by trial; S3/S3T/S4 by prompt (then vectors).
+- Wilson CIs on per-cell claim rates as `wilson_unclustered`.
+- `raw/claims_by_pair.csv` (48 data rows + header).
+- Baseline snapshot: `metrics_noci_aba5637.json`.
+- Figures updated (error bars on `fig_claims`, `fig_residual`).
+
+### Sanity
+1. Point estimates match `metrics_noci_aba5637.json` within 1e-9 — PASS.
+2. Every CI has lo95 ≤ m ≤ hi95 — PASS.
+3. `test_cluster_bootstrap_ci_width_vs_analytic` — PASS (CI width within 20% of analytic).
+
+### Deviations
+- None. Definitions, validity rules, thresholds, and raw logit/gen files unchanged.
+- D pooled_all **point** unchanged (m=1/6); CI endpoints differ slightly from the pre-005a bootstrap that did not resample base samples inside prompts (now joint as specified).

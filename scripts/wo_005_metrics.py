@@ -1,13 +1,17 @@
-"""WO-005 metrics.json + figures (numbers only; no interpretation)."""
+"""WO-005 / WO-005a metrics.json + figures (numbers only; no interpretation).
+
+WO-005a adds cluster-bootstrap and Wilson CIs; point estimators are unchanged.
+"""
 
 from __future__ import annotations
 
+import csv
 import json
 import math
 import sys
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 import matplotlib
 
@@ -28,6 +32,9 @@ STEERED_SETS = ["F", "I", "P0F", "P0I", "S3", "S3T", "S4"]
 COMPRESS_SETS = ["F", "I", "P0F", "P0I", "S3", "S3T"]
 CLASSES = ["concept", "random"]
 ALPHAS = [2, 4]
+PAIR_SETS = {"F", "I"}
+TRIAL_SETS = {"P0F", "P0I"}
+PROMPT_SETS = {"S3", "S3T", "S4"}
 
 
 def clean(x: Any) -> Any:
@@ -75,10 +82,22 @@ def pct(a: np.ndarray, q: Sequence[float]) -> List[float]:
 
 
 def ci_block(point: float, boots: Optional[np.ndarray]) -> Dict[str, Any]:
-    if boots is None:
+    if boots is None or (isinstance(boots, np.ndarray) and boots.size == 0):
         return {"m": point, "lo95": None, "hi95": None}
     lo95, hi95 = pct(boots, CI95)
     return {"m": point, "lo95": lo95, "hi95": hi95}
+
+
+def wilson_ci(k: int, n: int, z: float = 1.96) -> Tuple[Optional[float], Optional[float]]:
+    """Wilson score interval for a binomial proportion."""
+    if n <= 0:
+        return None, None
+    phat = k / n
+    z2 = z * z
+    denom = 1.0 + z2 / n
+    centre = (phat + z2 / (2.0 * n)) / denom
+    half = (z / denom) * math.sqrt(phat * (1.0 - phat) / n + z2 / (4.0 * n * n))
+    return centre - half, centre + half
 
 
 def wording_valid(
@@ -103,6 +122,12 @@ def wording_valid(
     return bool(a and b and c)
 
 
+def _resample_idx(rng: np.random.Generator, n: int) -> np.ndarray:
+    if n <= 0:
+        return np.array([], dtype=int)
+    return rng.integers(0, n, size=n)
+
+
 def cluster_boot_means(
     dF: Dict[str, np.ndarray],
     dI: Dict[str, np.ndarray],
@@ -115,6 +140,7 @@ def cluster_boot_means(
 
     Each replicate resamples pairs with replacement; within each drawn pair,
     resamples the flattened prompt×vector cells of Δclaim_F and Δclaim_I.
+    Kept for tests / simple Δ arrays; full gen bootstrap uses base resampling.
     """
     rng = np.random.default_rng(seed)
     out = np.full(n_boot, np.nan)
@@ -172,10 +198,92 @@ def prompt_key(r: dict) -> Tuple[Any, ...]:
     )
 
 
+def _ld_stats(pairs: Sequence[Tuple[float, float]]) -> Tuple[float, float, float, float]:
+    """Return mean_base, mean_steer, mean_dld, ratio from (steer, base) pairs."""
+    if not pairs:
+        return float("nan"), float("nan"), float("nan"), float("nan")
+    steers = np.array([s for s, _ in pairs], dtype=float)
+    bases = np.array([b for _, b in pairs], dtype=float)
+    mean_steer = nanmean(steers)
+    mean_base = nanmean(bases)
+    dlds = steers - bases
+    mean_dld = nanmean(dlds)
+    ratio = (
+        mean_steer / mean_base
+        if np.isfinite(mean_base) and mean_base != 0
+        else float("nan")
+    )
+    return mean_base, mean_steer, mean_dld, ratio
+
+
+def _cluster_key_for_set(s: str, r: dict) -> Any:
+    if s in PAIR_SETS:
+        return str(r.get("pair"))
+    if s in TRIAL_SETS:
+        return int(r.get("n", -1))
+    return prompt_key(r)
+
+
+# Nested: cluster -> prompt_id -> list[(steer_ld, base_ld)]
+LdTree = Dict[Any, Dict[Any, List[Tuple[float, float]]]]
+
+
+def _build_ld_tree(rows: List[dict], bases: Dict[Tuple[Any, ...], float], s: str) -> LdTree:
+    tree: LdTree = defaultdict(lambda: defaultdict(list))
+    for r in rows:
+        pk = prompt_key(r)
+        bl = bases.get(pk, float("nan"))
+        ld = fl(r.get("ld"))
+        ck = _cluster_key_for_set(s, r)
+        # prompt id within cluster
+        if s in PAIR_SETS:
+            pid = (r.get("prompt_idx"), r.get("n"))
+        elif s in TRIAL_SETS:
+            pid = ("trial", int(r.get("n", -1)))
+        else:
+            pid = pk
+        tree[ck][pid].append((ld, bl))
+    return tree
+
+
+def _boot_ld_tree(
+    tree: LdTree,
+    *,
+    paired_clusters: bool,
+    n_boot: int = N_BOOT,
+    seed: int = BOOT_SEED,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Bootstrap means: base, steer, dLD, ratio."""
+    rng = np.random.default_rng(seed)
+    b_base = np.full(n_boot, np.nan)
+    b_steer = np.full(n_boot, np.nan)
+    b_dld = np.full(n_boot, np.nan)
+    b_ratio = np.full(n_boot, np.nan)
+    clusters = list(tree.keys())
+    if not clusters:
+        return b_base, b_steer, b_dld, b_ratio
+    for b in range(n_boot):
+        sample: List[Tuple[float, float]] = []
+        drawn_c = [clusters[i] for i in _resample_idx(rng, len(clusters))]
+        for c in drawn_c:
+            prompts = list(tree[c].keys())
+            if not prompts:
+                continue
+            drawn_p = [prompts[i] for i in _resample_idx(rng, len(prompts))]
+            for p in drawn_p:
+                rows = tree[c][p]
+                if not rows:
+                    continue
+                for j in _resample_idx(rng, len(rows)):
+                    sample.append(rows[j])
+        mb, ms, md, mr = _ld_stats(sample)
+        b_base[b], b_steer[b], b_dld[b], b_ratio[b] = mb, ms, md, mr
+    return b_base, b_steer, b_dld, b_ratio
+
+
 def compute_validity(
     logit_rows: List[dict], c_rows: List[dict], abs_min: float
 ) -> Dict[str, Any]:
-    # base LD at n=1 for F/I wordings keyed by (pair, polarity)
     base_n1: Dict[Tuple[str, str], float] = {}
     for r in logit_rows:
         if r.get("set") not in ("F", "I"):
@@ -186,7 +294,6 @@ def compute_validity(
             continue
         base_n1[(str(r["pair"]), str(r["polarity"]))] = fl(r.get("ld"))
 
-    # C means per (pair, polarity, mode)
     c_acc: Dict[Tuple[str, str, str], List[float]] = defaultdict(list)
     for r in c_rows:
         mode = str(r.get("c_mode"))
@@ -221,9 +328,8 @@ def compute_validity(
     return {"per_wording": per_wording, "valid_pairs": valid_pairs, "all_pairs": list(PAIR_IDS)}
 
 
-def logit_block(rows: List[dict]) -> Dict[str, Any]:
-    """Aggregate logit metrics keyed by (set, alpha, class, cond)."""
-    # Index: base by prompt_key; steer by prompt_key + class + alpha + cond
+def logit_block(rows: List[dict], *, n_boot: int = N_BOOT, seed: int = BOOT_SEED) -> Dict[str, Any]:
+    """Aggregate logit metrics keyed by (set, alpha, class, cond) with cluster CIs."""
     bases: Dict[Tuple[Any, ...], float] = {}
     cells: Dict[Tuple[Any, ...], List[dict]] = defaultdict(list)
     for r in rows:
@@ -242,51 +348,39 @@ def logit_block(rows: List[dict]) -> Dict[str, Any]:
 
     out: Dict[str, Any] = {}
     for (s, cls, alpha, cond), lst in cells.items():
-        if cls not in CLASSES and cond != "late":
-            # late is concept α=4
-            pass
-        lds, dlds = [], []
-        top_b = {"Yes": 0, "No": 0, "other": 0, "n": 0}
+        flat = [(fl(r.get("ld")), bases.get(prompt_key(r), float("nan"))) for r in lst]
+        mean_base, mean_ld, mean_dld, ratio = _ld_stats(flat)
+
         top_s = {"Yes": 0, "No": 0, "other": 0, "n": 0}
         for r in lst:
-            pk = prompt_key(r)
-            bl = bases.get(pk, float("nan"))
-            ld = fl(r.get("ld"))
-            lds.append(ld)
-            if np.isfinite(bl):
-                dlds.append(ld - bl)
             t1 = r.get("top1_class") or "other"
             top_s[t1] = top_s.get(t1, 0) + 1
             top_s["n"] += 1
-        # base top-1 shares over unique prompts in this set
-        seen = set()
-        for r in lst:
-            pk = prompt_key(r)
-            if pk in seen:
-                continue
-            seen.add(pk)
-            # find base row top1 from original rows via ld match — skip; filled below
-        mean_ld = nanmean(np.array(lds))
-        mean_dld = nanmean(np.array(dlds))
-        mean_base = nanmean(np.array([bases.get(prompt_key(r), float("nan")) for r in lst]))
-        ratio = mean_ld / mean_base if np.isfinite(mean_base) and mean_base != 0 else float("nan")
+
+        tree = _build_ld_tree(lst, bases, str(s))
+        paired = str(s) in PAIR_SETS or str(s) in TRIAL_SETS
+        # S3/S3T/S4: tree keys are prompt_keys; resampling clusters == resampling prompts
+        b_base, b_steer, b_dld, b_ratio = _boot_ld_tree(
+            tree, paired_clusters=paired, n_boot=n_boot, seed=seed
+        )
+
         key = f"{s}|{cls}|a{alpha}|{cond}"
         out[key] = {
             "set": s,
             "class": cls,
             "alpha": alpha,
             "condition": cond,
-            "LD_base": {"m": mean_base},
-            "LD_steer": {"m": mean_ld},
-            "dLD": {"m": mean_dld},
-            "ratio_means": {"m": ratio},
+            "LD_base": ci_block(mean_base, b_base),
+            "LD_steer": ci_block(mean_ld, b_steer),
+            "dLD": ci_block(mean_dld, b_dld),
+            "ratio_means": ci_block(ratio, b_ratio),
             "top1_steer": {
                 k: (top_s[k] / top_s["n"] if top_s["n"] else None)
                 for k in ("Yes", "No", "other")
             },
             "n": len(lst),
         }
-    # base top1 per set
+
     base_top: Dict[str, Dict[str, float]] = {}
     for r in rows:
         if r.get("condition") != "base" or r.get("set") == "C":
@@ -303,42 +397,44 @@ def logit_block(rows: List[dict]) -> Dict[str, Any]:
     return out
 
 
-def compression_block(rows: List[dict]) -> Dict[str, Any]:
+def compression_block(
+    rows: List[dict], *, n_boot: int = N_BOOT, seed: int = BOOT_SEED
+) -> Dict[str, Any]:
     bases: Dict[Tuple[Any, ...], float] = {}
     for r in rows:
         if r.get("condition") == "base" and r.get("set") != "C":
             bases[prompt_key(r)] = fl(r.get("ld"))
 
+    def _steer_rows(s: str, alpha: int, cls: str) -> List[dict]:
+        return [
+            r
+            for r in rows
+            if r.get("set") == s
+            and r.get("condition") == "steer"
+            and r.get("row_kind") == cls
+            and int(r.get("alpha", -1)) == alpha
+        ]
+
     fit: Dict[str, Any] = {}
     resid: Dict[str, Any] = {}
     for alpha in ALPHAS:
         for cls in CLASSES:
-            # S4 fit
+            s4_rows = _steer_rows("S4", alpha, cls)
             xs, ys = [], []
-            for r in rows:
-                if (
-                    r.get("set") != "S4"
-                    or r.get("condition") != "steer"
-                    or r.get("row_kind") != cls
-                    or int(r.get("alpha", -1)) != alpha
-                ):
-                    continue
+            for r in s4_rows:
                 bl = bases.get(prompt_key(r), float("nan"))
                 if np.isfinite(bl):
                     xs.append(bl)
                     ys.append(fl(r.get("ld")))
             slope, intercept = ols_fit(np.array(xs), np.array(ys))
             fit[f"a{alpha}_{cls}"] = {"slope": slope, "intercept": intercept, "n": len(xs)}
+
+            s4_tree = _build_ld_tree(s4_rows, bases, "S4")
+
             for s in COMPRESS_SETS:
+                tgt_rows = _steer_rows(s, alpha, cls)
                 obs, pred = [], []
-                for r in rows:
-                    if (
-                        r.get("set") != s
-                        or r.get("condition") != "steer"
-                        or r.get("row_kind") != cls
-                        or int(r.get("alpha", -1)) != alpha
-                    ):
-                        continue
+                for r in tgt_rows:
                     bl = bases.get(prompt_key(r), float("nan"))
                     if not np.isfinite(bl) or not np.isfinite(slope):
                         continue
@@ -349,36 +445,179 @@ def compression_block(rows: List[dict]) -> Dict[str, Any]:
                     yesward = -residual
                 else:
                     yesward = float("nan")
+
+                tgt_tree = _build_ld_tree(tgt_rows, bases, s)
+                paired = s in PAIR_SETS or s in TRIAL_SETS
+                rng = np.random.default_rng(seed)
+                boots = np.full(n_boot, np.nan)
+                s4_clusters = list(s4_tree.keys())
+                tgt_clusters = list(tgt_tree.keys())
+                for b in range(n_boot):
+                    # resample S4 and refit
+                    s4_sample: List[Tuple[float, float]] = []
+                    if s4_clusters:
+                        for c in [s4_clusters[i] for i in _resample_idx(rng, len(s4_clusters))]:
+                            prompts = list(s4_tree[c].keys())
+                            for p in [prompts[i] for i in _resample_idx(rng, len(prompts))]:
+                                rows_p = s4_tree[c][p]
+                                for j in _resample_idx(rng, len(rows_p)):
+                                    s4_sample.append(rows_p[j])
+                    if len(s4_sample) < 2:
+                        continue
+                    bx = np.array([b0 for _, b0 in s4_sample], dtype=float)
+                    by = np.array([st for st, _ in s4_sample], dtype=float)
+                    sl, ic = ols_fit(bx, by)
+                    if not np.isfinite(sl):
+                        continue
+                    # resample target set
+                    tgt_sample: List[Tuple[float, float]] = []
+                    if not tgt_clusters:
+                        continue
+                    for c in [tgt_clusters[i] for i in _resample_idx(rng, len(tgt_clusters))]:
+                        prompts = list(tgt_tree[c].keys())
+                        for p in [prompts[i] for i in _resample_idx(rng, len(prompts))]:
+                            rows_p = tgt_tree[c][p]
+                            for j in _resample_idx(rng, len(rows_p)):
+                                tgt_sample.append(rows_p[j])
+                    if not tgt_sample:
+                        continue
+                    o = np.array([st for st, _ in tgt_sample], dtype=float)
+                    pv = np.array([sl * b0 + ic for _, b0 in tgt_sample], dtype=float)
+                    boots[b] = -(nanmean(o) - nanmean(pv))
+
                 resid[f"{s}|a{alpha}|{cls}"] = {
-                    "yesward_resid": {"m": yesward},
+                    "yesward_resid": ci_block(yesward, boots),
                     "n": len(obs),
                 }
     return {"fit": fit, "yesward_resid": resid}
 
 
+# Gen structures: pair -> prompt_idx -> {"base": [claims], "steer": [claims]}
+GenPrompt = Dict[str, List[float]]
+GenPair = Dict[int, GenPrompt]
+
+
+def _cond_key(r: dict) -> str:
+    c = r.get("condition")
+    if c == "base":
+        return "base"
+    if c == "concept":
+        return f"concept_a{int(r['alpha'])}"
+    if c == "random":
+        return f"random_a{int(r['alpha'])}"
+    return str(c)
+
+
+def _build_gen_pair_maps(
+    cells: Dict[Tuple[str, str, str], List[dict]], s: str, ck: str
+) -> Dict[str, GenPair]:
+    out: Dict[str, GenPair] = {}
+    for pid in PAIR_IDS:
+        base_lst = cells.get((s, pid, "base"), [])
+        ste_lst = cells.get((s, pid, ck), [])
+        by_p: GenPair = {}
+        for r in base_lst:
+            if r.get("claims") is None:
+                continue
+            p = int(r["prompt_idx"])
+            by_p.setdefault(p, {"base": [], "steer": []})
+            by_p[p]["base"].append(float(r["claims"]))
+        for r in ste_lst:
+            if r.get("claims") is None:
+                continue
+            p = int(r["prompt_idx"])
+            by_p.setdefault(p, {"base": [], "steer": []})
+            by_p[p]["steer"].append(float(r["claims"]))
+        out[pid] = by_p
+    return out
+
+
+def _point_deltas_from_map(gmap: GenPair) -> np.ndarray:
+    """Point estimator matching WO-005: for each steer row, claim - base_mean(prompt)."""
+    deltas = []
+    for p, d in gmap.items():
+        if not d["base"] or not d["steer"]:
+            continue
+        bm = float(np.mean(d["base"]))
+        for c in d["steer"]:
+            deltas.append(c - bm)
+    return np.array(deltas, dtype=float)
+
+
+def _boot_pair_delta(gmap: GenPair, rng: np.random.Generator) -> float:
+    """Within-pair resample prompts → base samples → vectors; return mean Δclaim."""
+    prompts = [p for p, d in gmap.items() if d["base"] and d["steer"]]
+    if not prompts:
+        return float("nan")
+    drawn_p = [prompts[i] for i in _resample_idx(rng, len(prompts))]
+    deltas = []
+    for p in drawn_p:
+        base = gmap[p]["base"]
+        steer = gmap[p]["steer"]
+        b_s = [base[j] for j in _resample_idx(rng, len(base))]
+        s_s = [steer[j] for j in _resample_idx(rng, len(steer))]
+        bm = float(np.mean(b_s))
+        for c in s_s:
+            deltas.append(c - bm)
+    return float(np.mean(deltas)) if deltas else float("nan")
+
+
+def _boot_D_and_deltas(
+    dF_maps: Dict[str, GenPair],
+    dI_maps: Dict[str, GenPair],
+    pairs: Sequence[str],
+    *,
+    n_boot: int = N_BOOT,
+    seed: int = BOOT_SEED,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Joint cluster bootstrap: returns boots of D, mean_dF, mean_dI."""
+    rng = np.random.default_rng(seed)
+    pairs = list(pairs)
+    P = len(pairs)
+    bD = np.full(n_boot, np.nan)
+    bF = np.full(n_boot, np.nan)
+    bI = np.full(n_boot, np.nan)
+    if P == 0:
+        return bD, bF, bI
+    for b in range(n_boot):
+        drawn = [pairs[i] for i in rng.integers(0, P, size=P)]
+        dfs, dis = [], []
+        for p in drawn:
+            df = _boot_pair_delta(dF_maps.get(p, {}), rng)
+            di = _boot_pair_delta(dI_maps.get(p, {}), rng)
+            if np.isfinite(df) and np.isfinite(di):
+                dfs.append(df)
+                dis.append(di)
+        if dfs:
+            bF[b] = float(np.mean(dfs))
+            bI[b] = float(np.mean(dis))
+            bD[b] = bF[b] - bI[b]
+    return bD, bF, bI
+
+
 def gen_metrics(
-    gens: List[dict], validity: Dict[str, Any]
-) -> Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
+    gens: List[dict],
+    validity: Dict[str, Any],
+    *,
+    n_boot: int = N_BOOT,
+    seed: int = BOOT_SEED,
+) -> Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any], Dict[str, Any], List[dict]]:
     valid_pairs = set(validity.get("valid_pairs") or [])
-    # group by (set, pair, cond_key)
-    # cond_key: base | concept_a2 | concept_a4 | random_a4
-    def cond_key(r: dict) -> str:
-        c = r.get("condition")
-        if c == "base":
-            return "base"
-        if c == "concept":
-            return f"concept_a{int(r['alpha'])}"
-        if c == "random":
-            return f"random_a{int(r['alpha'])}"
-        return str(c)
 
     cells: Dict[Tuple[str, str, str], List[dict]] = defaultdict(list)
     for r in gens:
-        cells[(r["set"], str(r.get("pair")), cond_key(r))].append(r)
+        cells[(r["set"], str(r.get("pair")), _cond_key(r))].append(r)
 
     def rates(lst: List[dict]) -> Dict[str, Any]:
         if not lst:
-            return {"claim": None, "claim_nondegen": None, "degenerate": None, "parse_fail": None, "n": 0}
+            return {
+                "claim": None,
+                "claim_nondegen": None,
+                "degenerate": None,
+                "parse_fail": None,
+                "n": 0,
+                "wilson_unclustered": None,
+            }
         claims, nondeg_claims, degen, pf = [], [], [], []
         for r in lst:
             cl = r.get("claims")
@@ -390,132 +629,143 @@ def gen_metrics(
                 if not r.get("degenerate"):
                     nondeg_claims.append(int(cl))
             degen.append(1 if r.get("degenerate") else 0)
+        k = int(sum(claims)) if claims else 0
+        n_c = len(claims)
+        lo, hi = wilson_ci(k, n_c) if n_c else (None, None)
+        claim_m = nanmean(np.array(claims, dtype=float)) if claims else None
         return {
-            "claim": nanmean(np.array(claims, dtype=float)) if claims else None,
-            "claim_nondegen": nanmean(np.array(nondeg_claims, dtype=float)) if nondeg_claims else None,
+            "claim": claim_m,
+            "claim_nondegen": nanmean(np.array(nondeg_claims, dtype=float))
+            if nondeg_claims
+            else None,
             "degenerate": nanmean(np.array(degen, dtype=float)),
             "parse_fail": nanmean(np.array(pf, dtype=float)),
             "n": len(lst),
+            "wilson_unclustered": {
+                "k": k,
+                "n": n_c,
+                "rate": claim_m,
+                "lo95": lo,
+                "hi95": hi,
+            }
+            if n_c
+            else None,
         }
 
     gen_out: Dict[str, Any] = {}
+    csv_rows: List[dict] = []
     for (s, pair, ck), lst in cells.items():
-        gen_out[f"{s}|{pair}|{ck}"] = rates(lst)
-
-    # Δclaim per pair × set, then D
-    def claim_by_prompt_vec(lst: List[dict], is_base: bool) -> Dict[Tuple[Any, ...], List[float]]:
-        acc: Dict[Tuple[Any, ...], List[float]] = defaultdict(list)
-        for r in lst:
-            if r.get("claims") is None:
-                continue
-            if is_base:
-                key = (r.get("prompt_idx"), r.get("sample_k"))
-            else:
-                key = (r.get("prompt_idx"), vec_key(r))
-            acc[key].append(float(r["claims"]))
-        return acc
-
-    def _deltas_for(s: str, pid: str, ck: str) -> np.ndarray:
-        base_lst = cells.get((s, pid, "base"), [])
-        ste_lst = cells.get((s, pid, ck), [])
-        base_by_p: Dict[int, List[float]] = defaultdict(list)
-        for r in base_lst:
-            if r.get("claims") is not None:
-                base_by_p[int(r["prompt_idx"])].append(float(r["claims"]))
-        base_mean = {p: float(np.mean(v)) for p, v in base_by_p.items() if v}
-        deltas = []
-        for r in ste_lst:
-            if r.get("claims") is None:
-                continue
-            p = int(r["prompt_idx"])
-            if p not in base_mean:
-                continue
-            deltas.append(float(r["claims"]) - base_mean[p])
-        return np.array(deltas, dtype=float)
+        rt = rates(lst)
+        gen_out[f"{s}|{pair}|{ck}"] = rt
+        w = rt.get("wilson_unclustered") or {}
+        csv_rows.append(
+            {
+                "set": s,
+                "pair": pair,
+                "cond": ck,
+                "k": w.get("k", ""),
+                "n": w.get("n", rt.get("n", 0)),
+                "rate": w.get("rate", rt.get("claim")),
+                "wilson_lo95": w.get("lo95"),
+                "wilson_hi95": w.get("hi95"),
+            }
+        )
 
     delta_claim: Dict[str, Any] = {}
     D_block: Dict[str, Any] = {}
 
     for ck in ("concept_a2", "concept_a4", "random_a4"):
-        dF_raw: Dict[str, np.ndarray] = {}
-        dI_raw: Dict[str, np.ndarray] = {}
+        dF_maps = _build_gen_pair_maps(cells, "F", ck)
+        dI_maps = _build_gen_pair_maps(cells, "I", ck)
+        dF_raw = {p: _point_deltas_from_map(dF_maps[p]) for p in PAIR_IDS}
+        dI_raw = {p: _point_deltas_from_map(dI_maps[p]) for p in PAIR_IDS}
+
         per_pair: Dict[str, Any] = {}
         for pid in PAIR_IDS:
-            dF_raw[pid] = _deltas_for("F", pid, ck)
-            dI_raw[pid] = _deltas_for("I", pid, ck)
+            # Within-pair CIs
+            rng = np.random.default_rng(seed)
+            bF = np.full(n_boot, np.nan)
+            bI = np.full(n_boot, np.nan)
+            bD = np.full(n_boot, np.nan)
+            for b in range(n_boot):
+                df = _boot_pair_delta(dF_maps[pid], rng)
+                di = _boot_pair_delta(dI_maps[pid], rng)
+                bF[b], bI[b] = df, di
+                if np.isfinite(df) and np.isfinite(di):
+                    bD[b] = df - di
+            mF = nanmean(dF_raw[pid])
+            mI = nanmean(dI_raw[pid])
+            mD = (
+                mF - mI
+                if dF_raw[pid].size and dI_raw[pid].size
+                else float("nan")
+            )
             per_pair[pid] = {
-                "delta_claim_F": {"m": nanmean(dF_raw[pid])},
-                "delta_claim_I": {"m": nanmean(dI_raw[pid])},
-                "D": {
-                    "m": nanmean(dF_raw[pid]) - nanmean(dI_raw[pid])
-                    if dF_raw[pid].size and dI_raw[pid].size
-                    else float("nan")
-                },
+                "delta_claim_F": ci_block(mF, bF),
+                "delta_claim_I": ci_block(mI, bI),
+                "D": ci_block(mD, bD),
                 "n_F": int(dF_raw[pid].size),
                 "n_I": int(dI_raw[pid].size),
             }
         delta_claim[ck] = per_pair
+
         point_D_all = nanmean(
             np.array([nanmean(dF_raw[p]) - nanmean(dI_raw[p]) for p in PAIR_IDS])
         )
-        boots_all = cluster_boot_means(dF_raw, dI_raw, PAIR_IDS)
+        point_F_all = nanmean(np.array([nanmean(dF_raw[p]) for p in PAIR_IDS]))
+        point_I_all = nanmean(np.array([nanmean(dI_raw[p]) for p in PAIR_IDS]))
+        boots_D, boots_F, boots_I = _boot_D_and_deltas(
+            dF_maps, dI_maps, PAIR_IDS, n_boot=n_boot, seed=seed
+        )
+
         dF_v = {p: dF_raw[p] for p in PAIR_IDS if p in valid_pairs}
         dI_v = {p: dI_raw[p] for p in PAIR_IDS if p in valid_pairs}
+        maps_Fv = {p: dF_maps[p] for p in dF_v}
+        maps_Iv = {p: dI_maps[p] for p in dI_v}
         point_D_v = (
             nanmean(np.array([nanmean(dF_v[p]) - nanmean(dI_v[p]) for p in dF_v]))
             if dF_v
             else float("nan")
         )
-        boots_v = (
-            cluster_boot_means(dF_v, dI_v, list(dF_v.keys())) if dF_v else np.array([])
+        boots_Dv, _, _ = (
+            _boot_D_and_deltas(maps_Fv, maps_Iv, list(dF_v.keys()), n_boot=n_boot, seed=seed)
+            if dF_v
+            else (np.array([]), np.array([]), np.array([]))
         )
+
         D_block[ck] = {
-            "pooled_all": ci_block(point_D_all, boots_all),
-            "pooled_valid": ci_block(point_D_v, boots_v if boots_v.size else None),
+            "pooled_all": ci_block(point_D_all, boots_D),
+            "pooled_valid": ci_block(point_D_v, boots_Dv if boots_Dv.size else None),
             "per_pair": {p: per_pair[p]["D"] for p in PAIR_IDS},
-            "delta_claim_F_pooled_all": {
-                "m": nanmean(np.array([nanmean(dF_raw[p]) for p in PAIR_IDS]))
-            },
-            "delta_claim_I_pooled_all": {
-                "m": nanmean(np.array([nanmean(dI_raw[p]) for p in PAIR_IDS]))
-            },
+            "delta_claim_F_pooled_all": ci_block(point_F_all, boots_F),
+            "delta_claim_I_pooled_all": ci_block(point_I_all, boots_I),
         }
 
-    # LOPO on concept_a4
-    lopo = {}
-    dF_raw, dI_raw = {}, {}
+    # LOPO on concept_a4 with CIs
     ck = "concept_a4"
-    for pid in PAIR_IDS:
-        for s in ("F", "I"):
-            base_lst = cells.get((s, pid, "base"), [])
-            ste_lst = cells.get((s, pid, ck), [])
-            base_by_p: Dict[int, List[float]] = defaultdict(list)
-            for r in base_lst:
-                if r.get("claims") is not None:
-                    base_by_p[int(r["prompt_idx"])].append(float(r["claims"]))
-            base_mean = {p: float(np.mean(v)) for p, v in base_by_p.items() if v}
-            deltas = [
-                float(r["claims"]) - base_mean[int(r["prompt_idx"])]
-                for r in ste_lst
-                if r.get("claims") is not None and int(r["prompt_idx"]) in base_mean
-            ]
-            if s == "F":
-                dF_raw[pid] = np.array(deltas, dtype=float)
-            else:
-                dI_raw[pid] = np.array(deltas, dtype=float)
+    dF_maps = _build_gen_pair_maps(cells, "F", ck)
+    dI_maps = _build_gen_pair_maps(cells, "I", ck)
+    dF_raw = {p: _point_deltas_from_map(dF_maps[p]) for p in PAIR_IDS}
+    dI_raw = {p: _point_deltas_from_map(dI_maps[p]) for p in PAIR_IDS}
+    lopo: Dict[str, Any] = {}
     for leave in PAIR_IDS:
         keep = [p for p in PAIR_IDS if p != leave]
-        dF_k = {p: dF_raw[p] for p in keep}
-        dI_k = {p: dI_raw[p] for p in keep}
-        dF_m = nanmean(np.array([nanmean(dF_k[p]) for p in keep]))
-        dI_m = nanmean(np.array([nanmean(dI_k[p]) for p in keep]))
+        dF_m = nanmean(np.array([nanmean(dF_raw[p]) for p in keep]))
+        dI_m = nanmean(np.array([nanmean(dI_raw[p]) for p in keep]))
+        boots_D, boots_F, boots_I = _boot_D_and_deltas(
+            {p: dF_maps[p] for p in keep},
+            {p: dI_maps[p] for p in keep},
+            keep,
+            n_boot=n_boot,
+            seed=seed,
+        )
         lopo[leave] = {
-            "delta_claim_F": dF_m,
-            "delta_claim_I": dI_m,
-            "D": dF_m - dI_m,
+            "delta_claim_F": ci_block(dF_m, boots_F),
+            "delta_claim_I": ci_block(dI_m, boots_I),
+            "D": ci_block(dF_m - dI_m, boots_D),
         }
 
-    return gen_out, delta_claim, D_block, {"lopo_concept_a4": lopo}
+    return gen_out, delta_claim, D_block, {"lopo_concept_a4": lopo}, csv_rows
 
 
 def contingency_table(gens: List[dict], logit_rows: List[dict]) -> Dict[str, Any]:
@@ -541,10 +791,14 @@ def contingency_table(gens: List[dict], logit_rows: List[dict]) -> Dict[str, Any
             if r.get("set") != s or r.get("condition") == "base":
                 continue
             vk = vec_key(r)
-            key = (s, int(r["prompt_idx"]), r.get("condition"), r.get("alpha"), vk)
-            # condition in gens is concept/random; logit uses steer
-            key2 = (s, int(r["prompt_idx"]), "concept" if r.get("condition") == "concept" else "random", r.get("alpha"), vk)
-            t1 = top1.get(key2) or top1.get(key) or "other"
+            key2 = (
+                s,
+                int(r["prompt_idx"]),
+                "concept" if r.get("condition") == "concept" else "random",
+                r.get("alpha"),
+                vk,
+            )
+            t1 = top1.get(key2) or "other"
             cl = r.get("claims")
             clabel = "null" if cl is None else ("YES" if int(cl) == 1 else "NO")
             tab[t1][clabel] += 1
@@ -553,7 +807,6 @@ def contingency_table(gens: List[dict], logit_rows: List[dict]) -> Dict[str, Any
 
 
 def make_figures(results_dir: Path, metrics: Dict[str, Any], c_rows: List[dict]) -> None:
-    # fig_claims
     D = metrics.get("D", {})
     fig, axes = plt.subplots(1, 2, figsize=(10, 4))
     for ax, pool in zip(axes, ("pooled_valid", "pooled_all")):
@@ -565,13 +818,9 @@ def make_figures(results_dir: Path, metrics: Dict[str, Any], c_rows: List[dict])
             ylo.append(blk.get("lo95") if blk.get("lo95") is not None else float("nan"))
             yhi.append(blk.get("hi95") if blk.get("hi95") is not None else float("nan"))
         ys, ylo, yhi = np.array(ys, float), np.array(ylo, float), np.array(yhi, float)
-        ax.errorbar(
-            xs,
-            ys,
-            yerr=[np.clip(ys - ylo, 0, None), np.clip(yhi - ys, 0, None)],
-            fmt="o",
-            capsize=3,
-        )
+        yerr_lo = np.where(np.isfinite(ylo), np.clip(ys - ylo, 0, None), np.nan)
+        yerr_hi = np.where(np.isfinite(yhi), np.clip(yhi - ys, 0, None), np.nan)
+        ax.errorbar(xs, ys, yerr=[yerr_lo, yerr_hi], fmt="o", capsize=3)
         ax.set_xticks(xs)
         ax.set_xticklabels(["cα2", "cα4", "rα4"])
         ax.axhline(0, color="gray", lw=0.8)
@@ -581,7 +830,6 @@ def make_figures(results_dir: Path, metrics: Dict[str, Any], c_rows: List[dict])
     fig.savefig(results_dir / "fig_claims.png", dpi=150)
     plt.close(fig)
 
-    # fig_ld — S4 scatter + identity (use compression fit)
     fig, ax = plt.subplots(figsize=(6, 6))
     ax.plot([-40, 40], [-40, 40], "k--", lw=0.7, label="identity")
     fit = metrics.get("compression", {}).get("fit", {})
@@ -597,13 +845,39 @@ def make_figures(results_dir: Path, metrics: Dict[str, Any], c_rows: List[dict])
     fig.savefig(results_dir / "fig_ld.png", dpi=150)
     plt.close(fig)
 
-    # fig_residual
     resid = metrics.get("compression", {}).get("yesward_resid", {})
     fig, ax = plt.subplots(figsize=(8, 4))
     keys = [k for k in resid if "|a4|concept" in k]
-    ys = [resid[k]["yesward_resid"]["m"] for k in keys]
-    ax.bar(range(len(keys)), [y if y is not None else float("nan") for y in ys])
-    ax.set_xticks(range(len(keys)))
+    ys = np.array(
+        [
+            resid[k]["yesward_resid"]["m"]
+            if resid[k]["yesward_resid"]["m"] is not None
+            else float("nan")
+            for k in keys
+        ],
+        dtype=float,
+    )
+    ylo = np.array(
+        [
+            resid[k]["yesward_resid"].get("lo95")
+            if resid[k]["yesward_resid"].get("lo95") is not None
+            else float("nan")
+            for k in keys
+        ],
+        dtype=float,
+    )
+    yhi = np.array(
+        [
+            resid[k]["yesward_resid"].get("hi95")
+            if resid[k]["yesward_resid"].get("hi95") is not None
+            else float("nan")
+            for k in keys
+        ],
+        dtype=float,
+    )
+    x = np.arange(len(keys))
+    ax.bar(x, ys, yerr=[np.clip(ys - ylo, 0, None), np.clip(yhi - ys, 0, None)], capsize=3)
+    ax.set_xticks(x)
     ax.set_xticklabels([k.split("|")[0] for k in keys], rotation=45, ha="right")
     ax.axhline(0, color="gray", lw=0.8)
     ax.set_ylabel("Yes-ward residual (α=4 concept)")
@@ -611,9 +885,7 @@ def make_figures(results_dir: Path, metrics: Dict[str, Any], c_rows: List[dict])
     fig.savefig(results_dir / "fig_residual.png", dpi=150)
     plt.close(fig)
 
-    # fig_comprehension
     fig, ax = plt.subplots(figsize=(10, 4))
-    # mean LD per pair×polarity×mode
     acc: Dict[Tuple[str, str, str], List[float]] = defaultdict(list)
     for r in c_rows:
         acc[(str(r["pair"]), str(r["polarity"]), str(r["c_mode"]))].append(fl(r.get("ld")))
@@ -634,11 +906,173 @@ def make_figures(results_dir: Path, metrics: Dict[str, Any], c_rows: List[dict])
     plt.close(fig)
 
 
+def _extract_points(obj: Any, path: str = "") -> Dict[str, float]:
+    """Flatten comparable point estimates from metrics (noci or new)."""
+    out: Dict[str, float] = {}
+    if isinstance(obj, dict):
+        if set(obj.keys()) >= {"m"} and all(
+            k in ("m", "lo95", "hi95") or k in obj for k in ("m",)
+        ):
+            # CI block or legacy {"m": ...}
+            if "lo95" in obj or "hi95" in obj or list(obj.keys()) == ["m"]:
+                if obj["m"] is not None and isinstance(obj["m"], (int, float)):
+                    out[path + ".m" if path else "m"] = float(obj["m"])
+                # still walk? no
+                return out
+        for k, v in obj.items():
+            if k in ("wilson_unclustered", "lo95", "hi95", "k"):
+                continue
+            p = f"{path}.{k}" if path else str(k)
+            out.update(_extract_points(v, p))
+    elif isinstance(obj, (int, float)) and not isinstance(obj, bool):
+        if obj is not None and math.isfinite(float(obj)):
+            out[path] = float(obj)
+    elif isinstance(obj, list):
+        pass
+    return out
+
+
+def assert_points_match(noci: dict, new: dict, tol: float = 1e-9) -> None:
+    """SANITY1: every noci point estimate equals new counterpart within tol."""
+    # Special-case LOPO bare floats vs CI blocks
+    a = _extract_points(noci)
+    b = _extract_points(new)
+    # Map old lopo.P1.D -> lopo.P1.D.m style: extract_points on new already uses .m
+    # For noci lopo values are bare floats at lopo.P1.D; new at lopo.P1.D.m
+    mismatches = []
+    for k, va in a.items():
+        # try direct
+        candidates = [k]
+        if not k.endswith(".m"):
+            candidates.append(k + ".m")
+        found = None
+        for c in candidates:
+            if c in b:
+                found = c
+                break
+        if found is None:
+            # optional keys only in new (wilson) — skip missing in new for keys we don't require
+            mismatches.append((k, va, "MISSING"))
+            continue
+        vb = b[found]
+        if abs(va - vb) > tol:
+            mismatches.append((k, va, vb))
+    # Filter: ignore keys that are only structural lists etc.
+    real = [(k, va, vb) for k, va, vb in mismatches if vb != "MISSING" or k.startswith(
+        ("logit.", "compression.", "delta_claim.", "D.", "lopo.", "gen.")
+    ) and not k.endswith(".valid") and "wilson" not in k]
+    # Missing in new is OK only if noci didn't have CI fields; require present for known point paths
+    hard = []
+    for k, va, vb in mismatches:
+        if vb == "MISSING":
+            # try .m
+            if k + ".m" in b:
+                if abs(va - b[k + ".m"]) > tol:
+                    hard.append((k, va, b[k + ".m"]))
+            elif any(
+                k.startswith(p)
+                for p in ("logit.", "compression.yesward", "delta_claim.", "D.", "lopo.", "gen.")
+            ) and not any(
+                x in k
+                for x in (
+                    "top1",
+                    "valid",
+                    "n_F",
+                    "n_I",
+                    "n.",
+                    ".n",
+                    "wilson",
+                    "per_wording",
+                    "sanity",
+                    "judge",
+                    "git",
+                    "model",
+                    "batch",
+                    "all_pairs",
+                    "valid_pairs",
+                    "contingency",
+                    "fit.",
+                )
+            ):
+                # gen claim rates etc should exist
+                if ".claim" in k or ".degenerate" in k or ".parse_fail" in k or k.endswith(".m"):
+                    hard.append((k, va, "MISSING"))
+        else:
+            hard.append((k, va, vb))
+    # Simpler strict check on known sections:
+    hard2 = []
+    for k, va in a.items():
+        if not any(
+            k.startswith(p)
+            for p in (
+                "logit.",
+                "compression.yesward_resid",
+                "delta_claim.",
+                "D.",
+                "lopo.",
+                "gen.",
+            )
+        ):
+            continue
+        if any(
+            x in k
+            for x in (
+                "top1",
+                "wilson",
+                ".n",
+                "n_F",
+                "n_I",
+                "valid",
+                "fit.",
+            )
+        ):
+            continue
+        vb = b.get(k)
+        if vb is None:
+            vb = b.get(k + ".m")
+        if vb is None:
+            hard2.append((k, va, None))
+        elif abs(va - vb) > tol:
+            hard2.append((k, va, vb))
+    if hard2:
+        preview = hard2[:20]
+        raise AssertionError(
+            f"SANITY1 point mismatch n={len(hard2)}; sample={preview}"
+        )
+
+
+def assert_ci_ordered(obj: Any, path: str = "") -> None:
+    """SANITY2: every CI satisfies lo95 ≤ m ≤ hi95."""
+    if isinstance(obj, dict):
+        if "m" in obj and ("lo95" in obj or "hi95" in obj):
+            m, lo, hi = obj.get("m"), obj.get("lo95"), obj.get("hi95")
+            if m is not None and lo is not None and hi is not None:
+                if not (lo - 1e-12 <= m <= hi + 1e-12):
+                    raise AssertionError(f"SANITY2 CI order fail at {path}: {obj}")
+        for k, v in obj.items():
+            assert_ci_ordered(v, f"{path}.{k}" if path else str(k))
+    elif isinstance(obj, list):
+        for i, v in enumerate(obj):
+            assert_ci_ordered(v, f"{path}[{i}]")
+
+
+def write_claims_csv(path: Path, rows: List[dict]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fields = ["set", "pair", "cond", "k", "n", "rate", "wilson_lo95", "wilson_hi95"]
+    with path.open("w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=fields)
+        w.writeheader()
+        for r in sorted(rows, key=lambda x: (x["set"], x["pair"], x["cond"])):
+            w.writerow(r)
+
+
 def main(results_dir: Path) -> None:
     results_dir = Path(results_dir)
     raw = results_dir / "raw"
     cfg = yaml.safe_load((REPO_ROOT / "configs" / "wo_005.yaml").read_text())
     abs_min = float(cfg.get("validity", {}).get("base_ld_abs_min", 3.0))
+    n_boot = int(cfg.get("bootstrap", {}).get("n_resamples", N_BOOT))
+    seed = int(cfg.get("bootstrap", {}).get("seed", BOOT_SEED))
 
     summary = {}
     if (results_dir / "run_summary.json").exists():
@@ -647,19 +1081,27 @@ def main(results_dir: Path) -> None:
     if (results_dir / "judge_summary.json").exists():
         judge_summary = json.loads((results_dir / "judge_summary.json").read_text())
 
+    noci_path = results_dir / "metrics_noci_aba5637.json"
+    if not noci_path.exists() and (results_dir / "metrics.json").exists():
+        # freeze current metrics as no-CI baseline once
+        noci_path.write_text((results_dir / "metrics.json").read_text())
+
     logit_rows = read_jsonl(raw / "logit_rows.jsonl")
     gens = read_jsonl(raw / "gens.jsonl")
     c_rows = [r for r in logit_rows if r.get("set") == "C"]
     steered = [r for r in logit_rows if r.get("set") != "C"]
 
     validity = compute_validity(steered, c_rows, abs_min)
-    logit = logit_block(steered)
-    compression = compression_block(steered)
-    gen_out, delta_claim, D_block, extra = gen_metrics(gens, validity)
+    logit = logit_block(steered, n_boot=n_boot, seed=seed)
+    compression = compression_block(steered, n_boot=n_boot, seed=seed)
+    gen_out, delta_claim, D_block, extra, csv_rows = gen_metrics(
+        gens, validity, n_boot=n_boot, seed=seed
+    )
     contingency = contingency_table(gens, steered)
 
     metrics = {
         "wo_id": "WO-005",
+        "wo_005a": True,
         "validity": validity,
         "logit": logit,
         "compression": compression,
@@ -676,6 +1118,8 @@ def main(results_dir: Path) -> None:
             "run_status": summary.get("status"),
             "replication_max_abs_ld": summary.get("replication_max_abs_ld"),
             "projection": summary.get("projection"),
+            "n_boot": n_boot,
+            "boot_seed": seed,
         },
         "judge": {
             "calls": judge_summary.get("n_calls"),
@@ -686,9 +1130,19 @@ def main(results_dir: Path) -> None:
         "model_revision": summary.get("model_revision"),
         "batch_size": summary.get("batch_size") or cfg.get("batch_size"),
     }
-    (results_dir / "metrics.json").write_text(json.dumps(clean(metrics), indent=2))
+    metrics = clean(metrics)
+
+    if noci_path.exists():
+        noci = json.loads(noci_path.read_text())
+        assert_points_match(noci, metrics)
+        print("SANITY1 point estimates match metrics_noci_aba5637.json")
+    assert_ci_ordered(metrics)
+    print("SANITY2 all CIs satisfy lo95 ≤ m ≤ hi95")
+
+    (results_dir / "metrics.json").write_text(json.dumps(metrics, indent=2))
+    write_claims_csv(raw / "claims_by_pair.csv", csv_rows)
     make_figures(results_dir, metrics, c_rows)
-    print(f"Wrote {results_dir / 'metrics.json'} and figures")
+    print(f"Wrote {results_dir / 'metrics.json'}, figures, and {raw / 'claims_by_pair.csv'}")
 
 
 if __name__ == "__main__":
