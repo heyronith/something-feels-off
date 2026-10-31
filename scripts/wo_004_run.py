@@ -1375,15 +1375,21 @@ def run_wo_004(
                         n_rows += 1
                         if spec.row_kind == "base":
                             base_logged = True
-                            key_b = (p.pset, p.idx, "baseline")
-                            if key_b in ld003:
-                                d_b = abs(float(rec["ld"]) - ld003[key_b])
-                                rep_max = max(rep_max, d_b)
-                                if d_b > max_rep:
-                                    raise RunStop(
-                                        f"SANITY4: base LD diff {d_b} > {max_rep} for {key_b}"
-                                    )
-                        if spec.condition == "steer" and spec.row_kind == "concept":
+                            # SANITY4: replication vs WO-003 is S1-only (spec §sanity 4).
+                            if p.pset == "S1":
+                                key_b = (p.pset, p.idx, "baseline")
+                                if key_b in ld003:
+                                    d_b = abs(float(rec["ld"]) - ld003[key_b])
+                                    rep_max = max(rep_max, d_b)
+                                    if d_b > max_rep:
+                                        raise RunStop(
+                                            f"SANITY4: base LD diff {d_b} > {max_rep} for {key_b}"
+                                        )
+                        if (
+                            p.pset == "S1"
+                            and spec.condition == "steer"
+                            and spec.row_kind == "concept"
+                        ):
                             d = sanity_replication(
                                 ld003, p.pset, p.idx, float(rec["ld"]), spec.concept, alpha, max_rep
                             )
