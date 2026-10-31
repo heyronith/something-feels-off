@@ -459,6 +459,30 @@ def load_wo004_prompt_ids(path: Path) -> Dict[Tuple[str, int], List[int]]:
     return out
 
 
+def _gen_prompt_key(r: dict) -> Tuple[Any, ...]:
+    return (r.get("set"), r.get("pair"), int(r.get("prompt_idx", -1)), int(r.get("n", -1)))
+
+
+def _load_complete_gens(path: Path) -> Tuple[List[dict], set]:
+    """Keep only fully complete prompts (150 rows); drop partial tails."""
+    if not path.exists():
+        return [], set()
+    by: Dict[Tuple[Any, ...], List[dict]] = {}
+    with path.open() as f:
+        for line in f:
+            if not line.strip():
+                continue
+            r = json.loads(line)
+            by.setdefault(_gen_prompt_key(r), []).append(r)
+    kept: List[dict] = []
+    done = set()
+    for key, lst in by.items():
+        if len(lst) == 150:
+            kept.extend(lst)
+            done.add(key)
+    return kept, done
+
+
 def run_wo_005(
     model_dir,
     revision_sha,
@@ -473,6 +497,7 @@ def run_wo_005(
     n_cores=8.0,
     mem_gib=64.0,
     volume_commit=None,
+    resume: bool = False,
 ) -> dict:
     t0 = time.perf_counter()
     results_path = Path(results_dir)
@@ -487,18 +512,49 @@ def run_wo_005(
         "status": "RUNNING",
         "errors": [],
         "batch_size": int(cfg["batch_size"]),
+        "resume": bool(resume),
     }
+    if resume and (results_path / "run_summary.json").exists():
+        prev = json.loads((results_path / "run_summary.json").read_text())
+        for k in ("dataset_revisions", "env", "projection", "replication_max_abs_ld", "n_logit_rows"):
+            if k in prev:
+                summary[k] = prev[k]
 
     def write_summary():
         (results_path / "run_summary.json").write_text(json.dumps(summary, indent=2, default=str))
 
-    f_logit = (raw / "logit_rows.jsonl").open("w")
-    f_gens = (raw / "gens.jsonl").open("w")
+    logit_path = raw / "logit_rows.jsonl"
+    gens_path = raw / "gens.jsonl"
+    skip_logit = False
+    if resume and logit_path.exists():
+        n_existing = sum(1 for line in logit_path.open() if line.strip())
+        if n_existing == EXPECTED_LOGIT:
+            skip_logit = True
+            slog(f"=== RESUME: skip logit (n={n_existing}) ===")
+        else:
+            raise SanityAbort(
+                f"RESUME: logit_rows.jsonl has {n_existing} rows, need {EXPECTED_LOGIT}"
+            )
+
+    kept_gens: List[dict] = []
+    done_gen_keys: set = set()
+    if resume:
+        kept_gens, done_gen_keys = _load_complete_gens(gens_path)
+        slog(
+            f"=== RESUME: keeping {len(kept_gens)} gens "
+            f"across {len(done_gen_keys)} complete prompts ==="
+        )
+        with gens_path.open("w") as gf:
+            for r in kept_gens:
+                gf.write(json.dumps(r) + "\n")
+
+    f_logit = None if skip_logit else logit_path.open("w")
+    f_gens = gens_path.open("a" if resume else "w")
 
     with gpu_ledger(
         ledger_path,
         wo_id="WO-005",
-        function="wo_005_run",
+        function="wo_005_run_resume" if resume else "wo_005_run",
         gpu_type=gpu_type,
         n_cores=n_cores,
         mem_gib=mem_gib,
@@ -508,7 +564,7 @@ def run_wo_005(
         try:
             if not git_hash_str or str(git_hash_str).lower() in ("unknown", ""):
                 raise SanityAbort("SANITY1: git hash missing")
-            slog(f"=== SANITY1 provenance git={git_hash_str} rev={revision_sha} ===")
+            slog(f"=== SANITY1 provenance git={git_hash_str} rev={revision_sha} resume={resume} ===")
 
             alphas = [float(a) for a in cfg["alphas"]]
             assert alphas == [2.0, 4.0]
@@ -558,175 +614,191 @@ def run_wo_005(
                 for a in alphas:
                     r_vecs[(s, a)] = build_random_vec(d_model, s, float(a) * norms[concepts[i]])
 
-            # SANITY3: anchors for each wording n=1
-            slog("=== SANITY3 anchors (n=1) ===")
-            for w in all_fi_wordings(1):
-                msgs = fi_messages(w["pair"], w["polarity"], 1)
-                text, ids, sp = build_framed_prompt(tokenizer, msgs, 1)
-                T = int(ids.shape[1])
-                late = late_start_pos(T)
-                assert late == T - 1
-                # mark steer start in log
-                slog(
-                    f"{w['pair']}-{w['polarity']} start={sp} T={T} late={late} "
-                    f"turn3={w['turn3'][:60]!r}..."
-                )
-            slog("SANITY3 PASS")
-
-            # SANITY4 top-5 base for F,I,S3T,C n=1
-            slog("=== SANITY4 base top-5 ===")
-            for p in prompts + c_prompts:
-                if p.pset not in ("F", "I", "S3T", "C"):
-                    continue
-                if p.meta.get("n") not in (1, None) and p.pset != "C":
-                    continue
-                if p.pset in ("F", "I") and int(p.meta.get("n", -1)) != 1:
-                    continue
-                lg, supports_ltk = forward_logit_batch(
-                    model, device, p.ids, p.start_pos,
-                    [RowSpec("base", "base", vec=zd)],
-                    steer_layer, d_model, supports_ltk,
-                )
-                top = torch.topk(lg[0].float(), 5)
-                tops = [(tokenizer.decode([int(i)]), round(float(v), 3)) for v, i in zip(top.values, top.indices)]
-                slog(f"{p.pset}[{p.idx}] pair={p.meta.get('pair')} top5={tops}")
-
-            # SANITY5 identity
-            slog("=== SANITY5 identity ===")
-            p0 = next(p for p in prompts if p.pset == "F")
-            c0 = concepts[0]
-            rows_id = [
-                RowSpec("base", "base", vec=zd),
-                RowSpec("alpha0", "alpha0", alpha=0.0, vec=zd),
-                RowSpec("concept", "steer", alpha=4.0, concept=c0, vec=c_vecs[(c0, 4.0)]),
-            ]
-            lg, supports_ltk = forward_logit_batch(
-                model, device, p0.ids, p0.start_pos, rows_id, steer_layer, d_model, supports_ltk
-            )
-            if not torch.equal(lg[0], lg[1]):
-                raise SanityAbort("SANITY5 alpha0 != base")
-            ld0 = float(lg[0].float()[no_id] - lg[0].float()[yes_id])
-            ld4 = float(lg[2].float()[no_id] - lg[2].float()[yes_id])
-            if ld0 == ld4:
-                raise SanityAbort("SANITY5 alpha4 did not change LD")
-            slog(f"SANITY5 PASS base_LD={ld0:.4f} a4_LD={ld4:.4f}")
-
-            wo004_ld = load_wo004_ld(Path(wo004_rows_path))
-            rep_max = 0.0
-            max_rep = float(cfg["replication_max_abs_ld"])
-            n_logit = 0
             limit_s = float(cfg["projected_gpu_limit_hours"]) * 3600.0
-            n_check = max(1, int(math.ceil(float(cfg["projection_check_fraction"]) * EXPECTED_STEERED)))
-            t_logit0 = time.perf_counter()
+            rep_max = float(summary.get("replication_max_abs_ld") or 0.0)
+            n_logit = int(summary.get("n_logit_rows") or 0)
 
-            def _maybe_rep(p: Prompt, spec: RowSpec, rec: dict) -> None:
-                nonlocal rep_max
-                if p.pset not in ("P0F", "P0I"):
-                    return
-                wo_set = "S1" if p.pset == "P0F" else "S8"
-                if spec.row_kind == "base":
-                    key = (wo_set, p.idx, "baseline")
-                    if key in wo004_ld:
-                        d = abs(float(rec["ld"]) - wo004_ld[key])
-                        rep_max = max(rep_max, d)
-                        if d > max_rep:
-                            raise RunStop(f"SANITY2 LD base diff {d} > {max_rep} {key}")
-                if (
-                    spec.condition == "steer"
-                    and spec.row_kind == "concept"
-                    and spec.alpha == 4.0
-                ):
-                    key = (wo_set, p.idx, f"concept__{spec.concept}__a4")
-                    if key in wo004_ld:
-                        d = abs(float(rec["ld"]) - wo004_ld[key])
-                        rep_max = max(rep_max, d)
-                        if d > max_rep:
-                            raise RunStop(f"SANITY2 LD steer diff {d} > {max_rep} {key}")
-
-            # ---- Logit pass (steered sets)
-            for pi, p in enumerate(prompts):
-                base = RowSpec("base", "base", vec=zd)
-                a0 = RowSpec("alpha0", "alpha0", alpha=0.0, vec=zd)
-                others: List[RowSpec] = []
-                for c in concepts:
-                    for a in alphas:
-                        others.append(
-                            RowSpec("concept", "steer", alpha=a, concept=c, vec=c_vecs[(c, a)])
-                        )
-                for i, s in enumerate(rand_seeds):
-                    for a in alphas:
-                        others.append(
-                            RowSpec("random", "steer", alpha=a, seed=s, vec=r_vecs[(s, a)])
-                        )
-                for c in concepts:
-                    others.append(
-                        RowSpec(
-                            "late",
-                            "late",
-                            alpha=4.0,
-                            concept=c,
-                            vec=c_vecs[(c, 4.0)],
-                            start_override=late_start_pos(p.n_tokens),
-                        )
-                    )
-                assert len(others) == 190
-                logged_base = False
-                for batch in pack_row_batches(base, a0, others, bs):
-                    lg, supports_ltk = forward_logit_batch(
-                        model, device, p.ids, p.start_pos, batch, steer_layer, d_model, supports_ltk
-                    )
-                    for b, spec in enumerate(batch):
-                        if spec.row_kind in ("base", "alpha0") and logged_base:
-                            continue
-                        rec = row_record(p, spec, lg[b], yes_id, no_id, tokenizer, bs)
-                        f_logit.write(json.dumps(rec) + "\n")
-                        n_logit += 1
-                        _maybe_rep(p, spec, rec)
-                    logged_base = True
-
-                if (pi + 1) == n_check:
-                    per = (time.perf_counter() - t_logit0) / (pi + 1)
-                    remain = EXPECTED_STEERED - (pi + 1)
-                    proj = (time.perf_counter() - t0) + per * remain
-                    proj += per * 0.2 * EXPECTED_C
-                    proj += 0.45 * 3600  # gen buffer; refined after gen 5%
-                    summary["projection"] = {
-                        "phase": "logit_5pct",
-                        "sec_per_prompt": per,
-                        "projected_total_hours": proj / 3600.0,
-                    }
+            if not skip_logit:
+                # SANITY3: anchors for each wording n=1
+                slog("=== SANITY3 anchors (n=1) ===")
+                for w in all_fi_wordings(1):
+                    msgs = fi_messages(w["pair"], w["polarity"], 1)
+                    text, ids, sp = build_framed_prompt(tokenizer, msgs, 1)
+                    T = int(ids.shape[1])
+                    late = late_start_pos(T)
+                    assert late == T - 1
                     slog(
-                        f"=== SANITY7 logit 5%: projected ~{proj/3600:.2f}h "
-                        f"(limit {limit_s/3600:.2f}h) ==="
+                        f"{w['pair']}-{w['polarity']} start={sp} T={T} late={late} "
+                        f"turn3={w['turn3'][:60]!r}..."
                     )
-                    if proj > limit_s:
-                        raise RunStop(f"SANITY7: projected {proj/3600:.2f}h > limit")
+                slog("SANITY3 PASS")
 
-                if (pi + 1) % int(cfg.get("checkpoint_every_prompts", 20)) == 0:
-                    f_logit.flush()
-                    write_summary()
-                    if volume_commit:
-                        try:
-                            volume_commit()
-                        except Exception as ve:  # noqa: BLE001
-                            slog(f"volume_commit: {ve}")
+                # SANITY4 top-5 base for F,I,S3T,C n=1
+                slog("=== SANITY4 base top-5 ===")
+                for p in prompts + c_prompts:
+                    if p.pset not in ("F", "I", "S3T", "C"):
+                        continue
+                    if p.meta.get("n") not in (1, None) and p.pset != "C":
+                        continue
+                    if p.pset in ("F", "I") and int(p.meta.get("n", -1)) != 1:
+                        continue
+                    lg, supports_ltk = forward_logit_batch(
+                        model, device, p.ids, p.start_pos,
+                        [RowSpec("base", "base", vec=zd)],
+                        steer_layer, d_model, supports_ltk,
+                    )
+                    top = torch.topk(lg[0].float(), 5)
+                    tops = [
+                        (tokenizer.decode([int(i)]), round(float(v), 3))
+                        for v, i in zip(top.values, top.indices)
+                    ]
+                    slog(f"{p.pset}[{p.idx}] pair={p.meta.get('pair')} top5={tops}")
 
-            # Set C: unsteered only
-            for p in c_prompts:
+                # SANITY5 identity
+                slog("=== SANITY5 identity ===")
+                p0 = next(p for p in prompts if p.pset == "F")
+                c0 = concepts[0]
+                rows_id = [
+                    RowSpec("base", "base", vec=zd),
+                    RowSpec("alpha0", "alpha0", alpha=0.0, vec=zd),
+                    RowSpec("concept", "steer", alpha=4.0, concept=c0, vec=c_vecs[(c0, 4.0)]),
+                ]
                 lg, supports_ltk = forward_logit_batch(
-                    model, device, p.ids, p.start_pos,
-                    [RowSpec("base", "base", vec=zd)],
-                    steer_layer, d_model, supports_ltk,
+                    model, device, p0.ids, p0.start_pos, rows_id, steer_layer, d_model, supports_ltk
                 )
-                rec = row_record(p, RowSpec("base", "base", vec=zd), lg[0], yes_id, no_id, tokenizer, 1)
-                f_logit.write(json.dumps(rec) + "\n")
-                n_logit += 1
-            f_logit.flush()
-            summary["n_logit_rows"] = n_logit
-            summary["replication_max_abs_ld"] = rep_max
-            slog(f"Logit pass done n_logit={n_logit} (expected {EXPECTED_LOGIT}) rep_max={rep_max}")
-            if n_logit != EXPECTED_LOGIT:
-                slog(f"WARN n_logit={n_logit} != expected {EXPECTED_LOGIT}")
+                if not torch.equal(lg[0], lg[1]):
+                    raise SanityAbort("SANITY5 alpha0 != base")
+                ld0 = float(lg[0].float()[no_id] - lg[0].float()[yes_id])
+                ld4 = float(lg[2].float()[no_id] - lg[2].float()[yes_id])
+                if ld0 == ld4:
+                    raise SanityAbort("SANITY5 alpha4 did not change LD")
+                slog(f"SANITY5 PASS base_LD={ld0:.4f} a4_LD={ld4:.4f}")
+
+                wo004_ld = load_wo004_ld(Path(wo004_rows_path))
+                rep_max = 0.0
+                max_rep = float(cfg["replication_max_abs_ld"])
+                n_logit = 0
+                n_check = max(
+                    1, int(math.ceil(float(cfg["projection_check_fraction"]) * EXPECTED_STEERED))
+                )
+                t_logit0 = time.perf_counter()
+
+                def _maybe_rep(p: Prompt, spec: RowSpec, rec: dict) -> None:
+                    nonlocal rep_max
+                    if p.pset not in ("P0F", "P0I"):
+                        return
+                    wo_set = "S1" if p.pset == "P0F" else "S8"
+                    if spec.row_kind == "base":
+                        key = (wo_set, p.idx, "baseline")
+                        if key in wo004_ld:
+                            d = abs(float(rec["ld"]) - wo004_ld[key])
+                            rep_max = max(rep_max, d)
+                            if d > max_rep:
+                                raise RunStop(f"SANITY2 LD base diff {d} > {max_rep} {key}")
+                    if (
+                        spec.condition == "steer"
+                        and spec.row_kind == "concept"
+                        and spec.alpha == 4.0
+                    ):
+                        key = (wo_set, p.idx, f"concept__{spec.concept}__a4")
+                        if key in wo004_ld:
+                            d = abs(float(rec["ld"]) - wo004_ld[key])
+                            rep_max = max(rep_max, d)
+                            if d > max_rep:
+                                raise RunStop(f"SANITY2 LD steer diff {d} > {max_rep} {key}")
+
+                assert f_logit is not None
+                # ---- Logit pass (steered sets)
+                for pi, p in enumerate(prompts):
+                    base = RowSpec("base", "base", vec=zd)
+                    a0 = RowSpec("alpha0", "alpha0", alpha=0.0, vec=zd)
+                    others: List[RowSpec] = []
+                    for c in concepts:
+                        for a in alphas:
+                            others.append(
+                                RowSpec("concept", "steer", alpha=a, concept=c, vec=c_vecs[(c, a)])
+                            )
+                    for i, s in enumerate(rand_seeds):
+                        for a in alphas:
+                            others.append(
+                                RowSpec("random", "steer", alpha=a, seed=s, vec=r_vecs[(s, a)])
+                            )
+                    for c in concepts:
+                        others.append(
+                            RowSpec(
+                                "late",
+                                "late",
+                                alpha=4.0,
+                                concept=c,
+                                vec=c_vecs[(c, 4.0)],
+                                start_override=late_start_pos(p.n_tokens),
+                            )
+                        )
+                    assert len(others) == 190
+                    logged_base = False
+                    for batch in pack_row_batches(base, a0, others, bs):
+                        lg, supports_ltk = forward_logit_batch(
+                            model, device, p.ids, p.start_pos, batch, steer_layer, d_model, supports_ltk
+                        )
+                        for b, spec in enumerate(batch):
+                            if spec.row_kind in ("base", "alpha0") and logged_base:
+                                continue
+                            rec = row_record(p, spec, lg[b], yes_id, no_id, tokenizer, bs)
+                            f_logit.write(json.dumps(rec) + "\n")
+                            n_logit += 1
+                            _maybe_rep(p, spec, rec)
+                        logged_base = True
+
+                    if (pi + 1) == n_check:
+                        per = (time.perf_counter() - t_logit0) / (pi + 1)
+                        remain = EXPECTED_STEERED - (pi + 1)
+                        proj = (time.perf_counter() - t0) + per * remain
+                        proj += per * 0.2 * EXPECTED_C
+                        proj += 0.45 * 3600  # gen buffer; refined after gen 5%
+                        summary["projection"] = {
+                            "phase": "logit_5pct",
+                            "sec_per_prompt": per,
+                            "projected_total_hours": proj / 3600.0,
+                        }
+                        slog(
+                            f"=== SANITY7 logit 5%: projected ~{proj/3600:.2f}h "
+                            f"(limit {limit_s/3600:.2f}h) ==="
+                        )
+                        if proj > limit_s:
+                            raise RunStop(f"SANITY7: projected {proj/3600:.2f}h > limit")
+
+                    if (pi + 1) % int(cfg.get("checkpoint_every_prompts", 20)) == 0:
+                        f_logit.flush()
+                        write_summary()
+                        if volume_commit:
+                            try:
+                                volume_commit()
+                            except Exception as ve:  # noqa: BLE001
+                                slog(f"volume_commit: {ve}")
+
+                # Set C: unsteered only
+                for p in c_prompts:
+                    lg, supports_ltk = forward_logit_batch(
+                        model, device, p.ids, p.start_pos,
+                        [RowSpec("base", "base", vec=zd)],
+                        steer_layer, d_model, supports_ltk,
+                    )
+                    rec = row_record(
+                        p, RowSpec("base", "base", vec=zd), lg[0], yes_id, no_id, tokenizer, 1
+                    )
+                    f_logit.write(json.dumps(rec) + "\n")
+                    n_logit += 1
+                f_logit.flush()
+                summary["n_logit_rows"] = n_logit
+                summary["replication_max_abs_ld"] = rep_max
+                slog(f"Logit pass done n_logit={n_logit} (expected {EXPECTED_LOGIT}) rep_max={rep_max}")
+                if n_logit != EXPECTED_LOGIT:
+                    slog(f"WARN n_logit={n_logit} != expected {EXPECTED_LOGIT}")
+            else:
+                slog(
+                    f"RESUME: logit already complete n_logit={n_logit} "
+                    f"rep_max={rep_max}"
+                )
 
             # ---- Generation pass (F∪I, P1–P6, n=1)
             gen_prompts = [
@@ -740,14 +812,20 @@ def run_wo_005(
             top_k = int(cfg["top_k"])
             top_p = float(cfg["top_p"])
             gbs = int(cfg["gen_batch_size"])
-            n_gens = 0
+            n_gens = len(kept_gens)
+            todo_prompts = [
+                p
+                for p in gen_prompts
+                if (p.pset, p.meta["pair"], p.idx, int(p.meta["n"])) not in done_gen_keys
+            ]
+            slog(
+                f"Gen pass: {len(todo_prompts)} prompts remaining "
+                f"(skip {len(done_gen_keys)} complete)"
+            )
             t_gen0 = time.perf_counter()
-            n_gen_check = max(1, int(math.ceil(0.05 * len(gen_prompts))))
+            n_gen_check = max(1, int(math.ceil(0.05 * max(1, len(todo_prompts)))))
 
-            # Build top1 lookup from logit rows for contingency (same prompt+vector)
-            # Will be filled by metrics from logit_rows; optionally stamp during gen.
-
-            for gi, p in enumerate(gen_prompts):
+            for gi, p in enumerate(todo_prompts):
                 # base × 30
                 for k in range(int(cfg["base_gen_repeats"])):
                     seed = seed_base + k
@@ -818,16 +896,37 @@ def run_wo_005(
 
                 if (gi + 1) == n_gen_check:
                     per_g = (time.perf_counter() - t_gen0) / (gi + 1)
-                    proj = (time.perf_counter() - t0) + per_g * (len(gen_prompts) - (gi + 1))
-                    summary.setdefault("projection", {})["phase_gen_5pct"] = {
+                    remain_g = len(todo_prompts) - (gi + 1)
+                    # Include prior GPU time estimate from first-pass projection when resuming
+                    prior_h = float(
+                        (summary.get("projection") or {})
+                        .get("phase_gen_5pct", {})
+                        .get("projected_total_hours")
+                        or 0.0
+                    )
+                    # Bound: this resume segment + already-spent first-pass estimate floor
+                    proj = (time.perf_counter() - t0) + per_g * remain_g
+                    if resume and prior_h > 0:
+                        # Conservatively compare remaining-only wall to leftover budget
+                        leftover = limit_s - prior_h * 3600.0
+                        if leftover < 0:
+                            leftover = limit_s  # first pass already near cap; still finish gens
+                        if proj > leftover and proj > limit_s:
+                            raise RunStop(
+                                f"SANITY7 resume gen: projected segment {proj/3600:.2f}h "
+                                f"> limit {limit_s/3600:.2f}h"
+                            )
+                    summary.setdefault("projection", {})["phase_gen_resume" if resume else "phase_gen_5pct"] = {
                         "sec_per_gen_prompt": per_g,
-                        "projected_total_hours": proj / 3600.0,
+                        "projected_segment_hours": proj / 3600.0,
+                        "n_todo": len(todo_prompts),
                     }
                     slog(
-                        f"=== SANITY7 gen 5%: projected ~{proj/3600:.2f}h "
+                        f"=== SANITY7 gen {'resume ' if resume else ''}5%: "
+                        f"projected segment ~{proj/3600:.2f}h "
                         f"(limit {limit_s/3600:.2f}h) ==="
                     )
-                    if proj > limit_s:
+                    if not resume and proj > limit_s:
                         raise RunStop(f"SANITY7 gen: projected {proj/3600:.2f}h > limit")
 
                 if (gi + 1) % 3 == 0:
@@ -841,13 +940,15 @@ def run_wo_005(
 
             f_gens.flush()
             summary["n_gens"] = n_gens
+            summary["n_logit_rows"] = n_logit
+            summary["replication_max_abs_ld"] = rep_max
             summary["total_seconds"] = time.perf_counter() - t0
             summary["status"] = "COMPLETE"
             if n_gens != EXPECTED_GENS:
                 slog(f"WARN n_gens={n_gens} != {EXPECTED_GENS}")
             slog(
                 f"DONE logit={n_logit} gens={n_gens} rep_max={rep_max:.4f} "
-                f"t={summary['total_seconds']/3600:.2f}h"
+                f"t={summary['total_seconds']/3600:.2f}h resume={resume}"
             )
             write_summary()
             return summary
@@ -866,7 +967,8 @@ def run_wo_005(
             write_summary()
             raise
         finally:
-            f_logit.close()
+            if f_logit is not None:
+                f_logit.close()
             f_gens.close()
             slog.close()
 

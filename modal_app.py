@@ -1025,7 +1025,7 @@ def wo_004_run(git_hash: str, revision_sha: str) -> dict:
     cpu=GPU_CPU_CORES,
     memory=GPU_MEMORY_MIB,
 )
-def wo_005_run(git_hash: str, revision_sha: str) -> dict:
+def wo_005_run(git_hash: str, revision_sha: str, resume: bool = False) -> dict:
     """GPU: WO-005 inverted-polarity logit + generation pass."""
     import importlib.util
     import sys
@@ -1061,7 +1061,9 @@ def wo_005_run(git_hash: str, revision_sha: str) -> dict:
     def _commit():
         volume.commit()
 
-    with open(log_path, "w") as logf:
+    # Append sanity log on resume so first-pass SANITY prints are preserved.
+    log_mode = "a" if resume else "w"
+    with open(log_path, log_mode) as logf:
         old_out, old_err = sys.stdout, sys.stderr
         sys.stdout = Tee(old_out, logf)
         sys.stderr = Tee(old_err, logf)
@@ -1081,6 +1083,7 @@ def wo_005_run(git_hash: str, revision_sha: str) -> dict:
                 n_cores=GPU_CPU_CORES,
                 mem_gib=GPU_MEMORY_GIB,
                 volume_commit=_commit,
+                resume=bool(resume),
             )
         finally:
             sys.stdout = old_out
@@ -1195,11 +1198,19 @@ def main(action: str = "help"):
             "[freeze|download|manifest|smoke|all|wo001|wo001_judge|"
             "wo002_partA|wo002_partB|wo002_judge|"
             "wo002b_partA|wo002b_partB|wo002b_judge|"
-            "wo003_download|wo003_run|wo003a|wo004|wo005|wo005_judge]"
+            "wo003_download|wo003_run|wo003a|wo004|wo005|wo005_resume|wo005_judge]"
         )
         return
 
-    if action in ("wo003_download", "wo003_run", "wo003a", "wo004", "wo005", "wo005_judge"):
+    if action in (
+        "wo003_download",
+        "wo003_run",
+        "wo003a",
+        "wo004",
+        "wo005",
+        "wo005_resume",
+        "wo005_judge",
+    ):
         sys.path.insert(0, str(root / "src"))
         rev = _read_revision_sha(root / "configs" / "model_revision.yaml")
         if not rev:
@@ -1332,15 +1343,16 @@ def main(action: str = "help"):
                 ]
             )
 
-        if action == "wo005":
+        if action in ("wo005", "wo005_resume"):
             from sfo.provenance import assert_clean_pushed_main
 
             gh = assert_clean_pushed_main(str(root))
             out5 = root / "results" / "WO-005"
             out5.mkdir(parents=True, exist_ok=True)
             (out5 / "raw").mkdir(parents=True, exist_ok=True)
-            print(f"=== wo_005_run git_hash={gh} ===")
-            out = wo_005_run.remote(git_hash=gh, revision_sha=rev)
+            do_resume = action == "wo005_resume"
+            print(f"=== wo_005_run git_hash={gh} resume={do_resume} ===")
+            out = wo_005_run.remote(git_hash=gh, revision_sha=rev, resume=do_resume)
             (out5 / "run_summary.json").write_text(out["run_summary.json"])
             _merge_ledger(
                 root / "results" / "budget_ledger.csv", out.get("budget_ledger.csv", "")
