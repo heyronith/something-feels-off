@@ -1,0 +1,37 @@
+{
+  "wo_id": "WO-004",
+  "git_hash": "ef38de86266060b07293d7f90271904efe66b3f7",
+  "model_revision": "005ad3404e59d6023443cb575daa05336842228a",
+  "status": "COMPLETE",
+  "errors": [],
+  "batch_size": 25,
+  "dataset_revisions": {
+    "boolq": "35b264d03638db9f4ce671b711558bf7ff0f80d5"
+  },
+  "prompt_counts": {
+    "S1": 6,
+    "S2v": 4,
+    "S3": 10,
+    "S4": 60,
+    "S8": 6
+  },
+  "env": {
+    "python": "3.11.12",
+    "torch": "2.14.1+cu126",
+    "transformers": "5.22.1",
+    "cuda": "12.6",
+    "gpu_name": "NVIDIA A100-SXM4-80GB"
+  },
+  "projection": {
+    "prompts_timed": 5,
+    "sec_per_prompt": 18.334740181999997,
+    "projected_total_hours": 0.46381381007888883,
+    "limit_hours": 1.0
+  },
+  "replication_max_abs_ld": 0.0,
+  "n_rows": 39646,
+  "n_decomp": 12212,
+  "transcoder_revision": "5c58dd4cddd52cef653059d85e12a86bf6222a28",
+  "total_seconds": 943.212758477,
+  "expected_n_rows": 39646
+}
