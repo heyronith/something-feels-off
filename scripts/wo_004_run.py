@@ -806,29 +806,27 @@ def sanity_identity(
             raise SanityAbort(f"SANITY2 clamp_own: max={_max_logit_diff(lg_a, lg_b)}")
         slog(f"{p.pset}[{p.idx}] clamp target=own vs none: identical")
 
-        lg_cg = _run_logits(
-            ctx,
-            p,
-            [
-                RowSpec("base", "base", vec=z),
-                RowSpec("concept", "clampG", concept=concepts[0], vec=z),
-            ],
-        )[1]
-        lg_base = _run_logits(ctx, p, [RowSpec("base", "base", vec=z)])[0]
-        if not torch.equal(lg_cg, lg_base):
-            raise SanityAbort("SANITY2 clampG unsteered vs base")
+        # Compare within the same batch (B=1 vs B=2 numerics can differ).
+        rows_cg = [
+            RowSpec("base", "base", vec=z),
+            RowSpec("concept", "clampG", concept=concepts[0], vec=z),
+        ]
+        lg_cg_batch = _run_logits(ctx, p, rows_cg)
+        if not torch.equal(lg_cg_batch[1], lg_cg_batch[0]):
+            raise SanityAbort(
+                f"SANITY2 clampG unsteered vs base: max={_max_logit_diff(lg_cg_batch[1], lg_cg_batch[0])}"
+            )
         slog(f"{p.pset}[{p.idx}] clampG unsteered vs base: identical")
 
-        lg_mlp = _run_logits(
-            ctx,
-            p,
-            [
-                RowSpec("base", "base", vec=z),
-                RowSpec("concept", "clampMLP", concept=concepts[0], vec=z),
-            ],
-        )[1]
-        if not torch.equal(lg_mlp, lg_base):
-            raise SanityAbort("SANITY2 clampMLP unsteered vs base")
+        rows_mlp = [
+            RowSpec("base", "base", vec=z),
+            RowSpec("concept", "clampMLP", concept=concepts[0], vec=z),
+        ]
+        lg_mlp_batch = _run_logits(ctx, p, rows_mlp)
+        if not torch.equal(lg_mlp_batch[1], lg_mlp_batch[0]):
+            raise SanityAbort(
+                f"SANITY2 clampMLP unsteered vs base: max={_max_logit_diff(lg_mlp_batch[1], lg_mlp_batch[0])}"
+            )
         slog(f"{p.pset}[{p.idx}] clampMLP unsteered vs base: identical")
 
         r_sham = [
@@ -838,9 +836,11 @@ def sanity_identity(
         ]
         plan_sh = build_clamp_plan(3, r_sham, ctx["ctrl"], ctx["gates"])
         plan_sh.target_row[2] = 0
-        lg_sh = _run_logits(ctx, p, r_sham, plan_sh)[2]
-        if not torch.equal(lg_sh, lg_base):
-            raise SanityAbort("SANITY2 sham source=base vs base")
+        lg_sh_batch = _run_logits(ctx, p, r_sham, plan_sh)
+        if not torch.equal(lg_sh_batch[2], lg_sh_batch[0]):
+            raise SanityAbort(
+                f"SANITY2 sham source=base vs base: max={_max_logit_diff(lg_sh_batch[2], lg_sh_batch[0])}"
+            )
         slog(f"{p.pset}[{p.idx}] sham source=base vs base: identical")
     slog("SANITY2 PASS")
 
