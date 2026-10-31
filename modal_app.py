@@ -66,6 +66,11 @@ image = (
         remote_path="/root/results/WO-003",
         ignore=["**/__pycache__/**", "**/*.pt"],
     )
+    .add_local_dir(
+        str(REPO / "results" / "WO-004"),
+        remote_path="/root/results/WO-004",
+        ignore=["**/__pycache__/**", "**/*.pt", "**/metrics_buggy_0b646ad.json"],
+    )
 )
 
 app = modal.App(APP_NAME, image=image)
@@ -1012,6 +1017,138 @@ def wo_004_run(git_hash: str, revision_sha: str) -> dict:
     }
 
 
+@app.function(
+    gpu="A100-80GB",
+    volumes={"/models": volume},
+    secrets=[hf_secret],
+    timeout=100 * 60,
+    cpu=GPU_CPU_CORES,
+    memory=GPU_MEMORY_MIB,
+)
+def wo_005_run(git_hash: str, revision_sha: str) -> dict:
+    """GPU: WO-005 inverted-polarity logit + generation pass."""
+    import importlib.util
+    import sys
+    from pathlib import Path
+
+    results_dir = Path(f"{VOLUME_RESULTS}/WO-005")
+    results_dir.mkdir(parents=True, exist_ok=True)
+    (results_dir / "raw").mkdir(parents=True, exist_ok=True)
+    ledger_path = Path(VOLUME_LEDGER)
+    ledger_path.parent.mkdir(parents=True, exist_ok=True)
+    log_path = results_dir / "raw" / "sanity_log.txt"
+
+    class Tee:
+        def __init__(self, *streams):
+            self.streams = streams
+
+        def write(self, data):
+            for s in self.streams:
+                s.write(data)
+                s.flush()
+
+        def flush(self):
+            for s in self.streams:
+                s.flush()
+
+    spec = importlib.util.spec_from_file_location(
+        "wo_005_run", "/root/scripts/wo_005_run.py"
+    )
+    mod = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    sys.modules[spec.name] = mod
+
+    def _commit():
+        volume.commit()
+
+    with open(log_path, "w") as logf:
+        old_out, old_err = sys.stdout, sys.stderr
+        sys.stdout = Tee(old_out, logf)
+        sys.stderr = Tee(old_err, logf)
+        try:
+            spec.loader.exec_module(mod)
+            summary = mod.run_wo_005(
+                model_dir=MODEL_DIR,
+                revision_sha=revision_sha,
+                config_path="/root/configs/wo_005.yaml",
+                results_dir=str(results_dir),
+                ledger_path=str(ledger_path),
+                wo001_vectors_path="/root/results/WO-001/raw/concept_vectors_L37.pt",
+                wo004_rows_path="/root/results/WO-004/raw/rows.jsonl",
+                wo004_prompts_path="/root/results/WO-004/raw/prompts.jsonl",
+                git_hash_str=git_hash,
+                gpu_type="A100-80GB",
+                n_cores=GPU_CPU_CORES,
+                mem_gib=GPU_MEMORY_GIB,
+                volume_commit=_commit,
+            )
+        finally:
+            sys.stdout = old_out
+            sys.stderr = old_err
+            _commit()
+
+    import json
+
+    return {
+        "status": (summary or {}).get("status"),
+        "stopped": bool(
+            (summary or {}).get("stopped")
+            or str((summary or {}).get("status", "")).startswith("STOPPED")
+        ),
+        "n_logit_rows": (summary or {}).get("n_logit_rows"),
+        "n_gens": (summary or {}).get("n_gens"),
+        "total_seconds": (summary or {}).get("total_seconds"),
+        "budget_ledger.csv": ledger_path.read_text() if ledger_path.exists() else "",
+        "run_summary.json": (results_dir / "run_summary.json").read_text()
+        if (results_dir / "run_summary.json").exists()
+        else json.dumps(summary or {}, indent=2, default=str),
+    }
+
+
+@app.function(
+    volumes={"/models": volume},
+    secrets=[openai_secret],
+    timeout=60 * 60 * 2,
+    cpu=4.0,
+    memory=8192,
+)
+def wo_005_judge(git_hash: str) -> dict:
+    """CPU: OpenAI claim judge for WO-005 generations."""
+    import importlib.util
+    import json
+    import os
+    import sys
+    from pathlib import Path
+
+    if not (os.environ.get("OPENAI_API_KEY") or os.environ.get("OPENAI_KEY")):
+        return {"blocked": True, "reason": "OPENAI_API_KEY missing from openai-key secret"}
+
+    results_dir = Path(f"{VOLUME_RESULTS}/WO-005")
+    ledger_path = Path(VOLUME_LEDGER)
+    spec = importlib.util.spec_from_file_location(
+        "wo_005_judge", "/root/scripts/wo_005_judge.py"
+    )
+    mod = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    sys.modules[spec.name] = mod
+    spec.loader.exec_module(mod)
+    summary = mod.run_wo_005_judge(
+        config_path="/root/configs/wo_005.yaml",
+        results_dir=str(results_dir),
+        ledger_path=str(ledger_path),
+        git_hash_str=git_hash,
+    )
+    volume.commit()
+    return {
+        "blocked": False,
+        "status": (summary or {}).get("status"),
+        "n_calls": (summary or {}).get("n_calls"),
+        "est_usd": (summary or {}).get("est_usd"),
+        "judge_summary.json": json.dumps(summary or {}, indent=2),
+        "budget_ledger.csv": ledger_path.read_text() if ledger_path.exists() else "",
+    }
+
+
 def _read_revision_sha(rev_path: Path) -> str | None:
     """Parse revision_sha from model_revision.yaml without PyYAML (local entrypoint)."""
     if not rev_path.exists():
@@ -1058,11 +1195,11 @@ def main(action: str = "help"):
             "[freeze|download|manifest|smoke|all|wo001|wo001_judge|"
             "wo002_partA|wo002_partB|wo002_judge|"
             "wo002b_partA|wo002b_partB|wo002b_judge|"
-            "wo003_download|wo003_run|wo003a|wo004]"
+            "wo003_download|wo003_run|wo003a|wo004|wo005|wo005_judge]"
         )
         return
 
-    if action in ("wo003_download", "wo003_run", "wo003a", "wo004"):
+    if action in ("wo003_download", "wo003_run", "wo003a", "wo004", "wo005", "wo005_judge"):
         sys.path.insert(0, str(root / "src"))
         rev = _read_revision_sha(root / "configs" / "model_revision.yaml")
         if not rev:
@@ -1177,6 +1314,76 @@ def main(action: str = "help"):
                 out.get("n_rows"),
                 "sec=",
                 out.get("total_seconds"),
+            )
+            return
+
+        def _pull_wo005():
+            dest = root / "results"
+            dest.mkdir(parents=True, exist_ok=True)
+            subprocess.check_call(
+                [
+                    "modal",
+                    "volume",
+                    "get",
+                    "--force",
+                    VOLUME_NAME,
+                    "results/WO-005",
+                    str(dest),
+                ]
+            )
+
+        if action == "wo005":
+            from sfo.provenance import assert_clean_pushed_main
+
+            gh = assert_clean_pushed_main(str(root))
+            out5 = root / "results" / "WO-005"
+            out5.mkdir(parents=True, exist_ok=True)
+            (out5 / "raw").mkdir(parents=True, exist_ok=True)
+            print(f"=== wo_005_run git_hash={gh} ===")
+            out = wo_005_run.remote(git_hash=gh, revision_sha=rev)
+            (out5 / "run_summary.json").write_text(out["run_summary.json"])
+            _merge_ledger(
+                root / "results" / "budget_ledger.csv", out.get("budget_ledger.csv", "")
+            )
+            _pull_wo005()
+            print(
+                "WO-005 run status:",
+                out.get("status"),
+                "stopped=",
+                out.get("stopped"),
+                "n_logit=",
+                out.get("n_logit_rows"),
+                "n_gens=",
+                out.get("n_gens"),
+                "sec=",
+                out.get("total_seconds"),
+            )
+            return
+
+        if action == "wo005_judge":
+            from sfo.provenance import assert_clean_pushed_main
+
+            gh = assert_clean_pushed_main(str(root))
+            out5 = root / "results" / "WO-005"
+            out5.mkdir(parents=True, exist_ok=True)
+            (out5 / "raw").mkdir(parents=True, exist_ok=True)
+            print(f"=== wo_005_judge git_hash={gh} ===")
+            out = wo_005_judge.remote(git_hash=gh)
+            if out.get("blocked"):
+                print("JUDGE BLOCKED:", out.get("reason"))
+                return
+            (out5 / "judge_summary.json").write_text(out["judge_summary.json"])
+            _merge_ledger(
+                root / "results" / "budget_ledger.csv", out.get("budget_ledger.csv", "")
+            )
+            _pull_wo005()
+            print(
+                "WO-005 judge status:",
+                out.get("status"),
+                "n_calls=",
+                out.get("n_calls"),
+                "est_usd=",
+                out.get("est_usd"),
             )
             return
 
