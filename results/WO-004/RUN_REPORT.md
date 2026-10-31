@@ -83,3 +83,59 @@ Concept batches per prompt: 17; random batches: 3.
 ## GPU minutes
 - Successful run: **≈15.7 min** (0.262 h).
 - All WO-004 attempts combined: **≈21.3 min** (0.356 h).
+
+---
+
+# WO-004a
+
+## Bug
+`build_ld_maps` stored LD as `cell[set][class][cond][vec_key]`, omitting `prompt_idx`. Each vector's LD was overwritten by the last prompt's row, so `matrix_for` filled every prompt with that single value. Derived metrics (dLD, LD, p_LDneg, N, Rec, Eff, Suf, nonadd, hydra via paired matrices, lopo, compression) were wrong.
+
+Example: S1 concept steer mean dLD was **−19.62** in `metrics_buggy_0b646ad.json`; plain group-by over `raw/rows.jsonl` gives **−15.18**. Fixed metrics match the group-by.
+
+## Fix
+Key every LD cell by **(set, class, cond, prompt_idx, vector_key)** via `cell[set][class][cond][prompt_idx][vec_key]` and `cell_get(...)`. Compression OLS / ratio / pred_resid use the same helper. Decomposition joins base by `(set, prompt_idx, layer)` to steer by `(set, prompt_idx, layer, vec_key)` (previously base and steer never shared a key, so decomp deltas were empty).
+
+## Audit list (per-row join keys after the fix)
+| Function / site | Key after fix |
+|---|---|
+| `build_ld_maps` / `cell_get` | `(set, class, cond, prompt_idx, vec_key)` for LD; base `(set, prompt_idx)` |
+| `matrix_for` | looks up via `cell_get` + `base_ld[(set, prompt_idx)]` |
+| `paired_diff_matrix` | two `matrix_for` calls (same keys) |
+| `groupby_mean_ld_dld` | independent: base `(set, prompt_idx)`; aggregates per `(set, class, cond)` |
+| `linear_n_features` / `linear_n_gate` | base row by `prompt_idx`; steer by `(prompt_idx, vec_key)`; feats by `(prompt_idx, layer)` |
+| `hydra_l50_fraction` | base by `(set, prompt_idx)`; steer/clampG45 by `(prompt_idx, vec_key, condition)` |
+| `decomposition_metrics` | base `(set, prompt_idx, layer)`; steer `(set, prompt_idx, layer, vec_key)` |
+| compression scatter / fit / ratio / pred_resid | `base_ld[(set, prompt_idx)]` + `cell_get(..., prompt_idx, vec_key)` |
+| `controls_summary` | per-prompt control rows already keyed by `set` + `prompt_idx` (unchanged) |
+
+## Commands run
+```bash
+PYTHONPATH=src:scripts python -m pytest tests/test_wo004_metrics.py -v
+cp results/WO-004/metrics.json results/WO-004/metrics_buggy_0b646ad.json
+PYTHONPATH=src:scripts python scripts/wo_004_metrics.py results/WO-004
+```
+
+## Regression test (before / after)
+- `test_buggy_keying_disagrees_with_groupby`: synthetic 2×2; buggy mean dLD = **−0.5**, group-by truth = **−5.0** → **disagrees (demonstrates old failure mode)**. PASS.
+- `test_fixed_matrix_for_matches_groupby`: fixed `matrix_for` mean dLD = **−5.0** equals group-by. PASS.
+
+```
+tests/test_wo004_metrics.py::test_buggy_keying_disagrees_with_groupby PASSED
+tests/test_wo004_metrics.py::test_fixed_matrix_for_matches_groupby PASSED
+```
+
+## Real-data check
+- Asserted `n_rows == 39646`.
+- For every `(set, class, cond)`: `n == prompts × vectors` (e.g. S1 concept steer = 300) and `|metrics.m − groupby.mean| < 1e-6` for LD and dLD.
+- Table: `raw/groupby_check.csv` (55 data rows + header).
+- S1 concept steer: mean_dLD = **−15.177916666666667** (matches group-by).
+
+## Outputs
+- Fixed `scripts/wo_004_metrics.py`
+- `tests/test_wo004_metrics.py`
+- Regenerated `metrics.json` + `fig_*.png`
+- `metrics_buggy_0b646ad.json` (pre-fix snapshot)
+- `raw/groupby_check.csv`
+- Raw experiment files (`rows.jsonl`, `controls.jsonl`, `decomposition.jsonl`, `dla_cache.pt`) **unchanged**.
+- GPU: **none**.

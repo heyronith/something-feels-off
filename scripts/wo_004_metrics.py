@@ -172,14 +172,15 @@ class Boot:
             return np.where(den > 0, num / den, np.nan)
 
 
-def build_ld_maps(rows: List[dict]) -> Tuple[
-    Dict[Tuple[str, int], float],
-    Dict[str, Dict[str, Dict[str, Dict[str, float]]]],
-]:
-    """base_ld[(set,idx)]; cell[set][class][cond][vec_key] -> ld (non-base rows)."""
+# cell[set][class][cond][prompt_idx][vec_key] -> ld
+CellMap = Dict[str, Dict[str, Dict[str, Dict[int, Dict[str, float]]]]]
+
+
+def build_ld_maps(rows: List[dict]) -> Tuple[Dict[Tuple[str, int], float], CellMap]:
+    """base_ld[(set, prompt_idx)]; cell[set][class][cond][prompt_idx][vec_key] -> ld."""
     base_ld: Dict[Tuple[str, int], float] = {}
-    cell: Dict[str, Dict[str, Dict[str, Dict[str, float]]]] = defaultdict(
-        lambda: defaultdict(lambda: defaultdict(dict))
+    cell: CellMap = defaultdict(
+        lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict)))
     )
     for r in rows:
         s, p = r["set"], int(r["prompt_idx"])
@@ -193,13 +194,19 @@ def build_ld_maps(rows: List[dict]) -> Tuple[
         vk = vec_key(r)
         if vk is None:
             continue
-        cell[s][rk][cond][vk] = fl(r.get("ld"))
+        cell[s][rk][cond][p][vk] = fl(r.get("ld"))
     return base_ld, cell
+
+
+def cell_get(cell: CellMap, s: str, k: str, cond: str, p: int, v: str) -> Optional[float]:
+    """Lookup LD keyed by (set, class, cond, prompt_idx, vector_key)."""
+    d = cell.get(s, {}).get(k, {}).get(cond, {}).get(p, {}).get(v)
+    return None if d is None else float(d)
 
 
 def matrix_for(
     base_ld: Dict[Tuple[str, int], float],
-    cell: Dict[str, Dict[str, Dict[str, Dict[str, float]]]],
+    cell: CellMap,
     s: str,
     k: str,
     cond: str,
@@ -215,7 +222,7 @@ def matrix_for(
     for p in prompts:
         bl = base_ld.get((s, p), float("nan"))
         for v, j in vi.items():
-            lv = cell.get(s, {}).get(k, {}).get(cond, {}).get(v)
+            lv = cell_get(cell, s, k, cond, p, v)
             if lv is None:
                 continue
             i = pi[p]
@@ -238,7 +245,7 @@ def lopo_means(M: np.ndarray) -> Dict[str, float]:
 
 def paired_diff_matrix(
     base_ld: Dict[Tuple[str, int], float],
-    cell: Dict[str, Dict[str, Dict[str, Dict[str, float]]]],
+    cell: CellMap,
     s: str,
     k: str,
     cond_a: str,
@@ -250,6 +257,37 @@ def paired_diff_matrix(
     da, _, _ = matrix_for(base_ld, cell, s, k, cond_a, prompts, vectors)
     db, _, _ = matrix_for(base_ld, cell, s, k, cond_b, prompts, vectors)
     return da - db
+
+
+def groupby_mean_ld_dld(rows: List[dict]) -> Dict[Tuple[str, str, str], Dict[str, Any]]:
+    """Independent plain group-by: mean LD and mean dLD per (set, class, cond)."""
+    base: Dict[Tuple[str, int], float] = {}
+    for r in rows:
+        if row_kind(r) == "baseline" or r.get("condition") == "base":
+            base[(r["set"], int(r["prompt_idx"]))] = fl(r.get("ld"))
+    buckets: Dict[Tuple[str, str, str], List[Tuple[float, float]]] = defaultdict(list)
+    for r in rows:
+        rk = row_kind(r)
+        if rk not in CLASSES:
+            continue
+        cond = r.get("condition", "")
+        if not cond or cond == "base":
+            continue
+        s, p = r["set"], int(r["prompt_idx"])
+        ld = fl(r.get("ld"))
+        bl = base.get((s, p), float("nan"))
+        dld = ld - bl if np.isfinite(bl) else float("nan")
+        buckets[(s, rk, cond)].append((ld, dld))
+    out: Dict[Tuple[str, str, str], Dict[str, Any]] = {}
+    for key, pairs in buckets.items():
+        lds = np.array([a for a, _ in pairs], dtype=float)
+        dlds = np.array([b for _, b in pairs], dtype=float)
+        out[key] = {
+            "n": len(pairs),
+            "mean_LD": nanmean(lds),
+            "mean_dLD": nanmean(dlds),
+        }
+    return out
 
 
 def bootstrap_ratio(num_boot: np.ndarray, den_boot: np.ndarray) -> np.ndarray:
@@ -450,31 +488,29 @@ def decomposition_metrics(raw: Path, prompts_by_set: Dict[str, List[int]]) -> Tu
     rows = read_jsonl(raw / "decomposition.jsonl")
     if not rows:
         return {}, "decomposition.jsonl missing or empty"
-    # (set, prompt, layer, vec) -> {base|steer: {features,skip,error}}
     parts = ("features_dla_eq", "skip_dla_eq", "error_dla_eq")
-    acc: Dict[Tuple[str, int, int, str], Dict[str, Dict[str, float]]] = defaultdict(dict)
+    # base keyed by (set, prompt_idx, layer); steer by (set, prompt_idx, layer, vec_key)
+    base_acc: Dict[Tuple[str, int, int], Dict[str, float]] = {}
+    steer_acc: Dict[Tuple[str, int, int, str], Dict[str, float]] = {}
     for r in rows:
         s = r["set"]
         if s not in DECOMP_SETS:
             continue
         rk = row_kind(r)
-        if rk not in ("baseline", "concept", "random"):
-            continue
-        if rk == "baseline":
-            tag = "base"
-        elif r.get("condition") == "steer":
-            tag = "steer"
-        else:
-            continue
-        vk = vec_key(r) or "__base__"
         layer = int(r["layer"])
-        # Prefer new keys; fall back to legacy proj_delta_u_n as error.
+        p = int(r["prompt_idx"])
         entry = {
             "features_dla_eq": fl(r.get("features_dla_eq")),
             "skip_dla_eq": fl(r.get("skip_dla_eq")),
             "error_dla_eq": fl(r.get("error_dla_eq", r.get("proj_delta_u_n"))),
         }
-        acc[(s, int(r["prompt_idx"]), layer, vk)][tag] = entry
+        if rk == "baseline" or r.get("condition") == "base":
+            base_acc[(s, p, layer)] = entry
+        elif rk in CLASSES and r.get("condition") == "steer":
+            vk = vec_key(r)
+            if vk is None:
+                continue
+            steer_acc[(s, p, layer, vk)] = entry
 
     out: Dict[str, Any] = {}
     for s in DECOMP_SETS:
@@ -482,12 +518,14 @@ def decomposition_metrics(raw: Path, prompts_by_set: Dict[str, List[int]]) -> Tu
             continue
         for layer in TAP_LAYERS:
             deltas = {p: [] for p in parts}
-            for key, d in acc.items():
-                if key[0] != s or key[2] != layer or key[3] == "__base__":
+            for (ss, pp, ll, _vk), ste in steer_acc.items():
+                if ss != s or ll != layer:
                     continue
-                if "base" in d and "steer" in d:
-                    for p in parts:
-                        deltas[p].append(d["steer"][p] - d["base"][p])
+                bas = base_acc.get((ss, pp, ll))
+                if bas is None:
+                    continue
+                for part in parts:
+                    deltas[part].append(ste[part] - bas[part])
             out.setdefault(s, {})[f"L{layer}"] = {
                 "features": ci_block(nanmean(np.array(deltas["features_dla_eq"])), None),
                 "skip": ci_block(nanmean(np.array(deltas["skip_dla_eq"])), None),
@@ -912,7 +950,7 @@ def main(results_dir: Path) -> None:
             if bl is None:
                 continue
             for v in vecs:
-                lv = cell.get("S4", {}).get(k, {}).get("steer", {}).get(v)
+                lv = cell_get(cell, "S4", k, "steer", p, v)
                 if lv is not None:
                     x_list.append(bl)
                     y_list.append(lv)
@@ -931,7 +969,7 @@ def main(results_dir: Path) -> None:
                 if bl is None:
                     continue
                 for v in vecs:
-                    lv = cell.get("S4", {}).get(k, {}).get("steer", {}).get(v)
+                    lv = cell_get(cell, "S4", k, "steer", p, v)
                     if lv is not None:
                         xp.append(bl)
                         yp.append(lv)
@@ -953,7 +991,7 @@ def main(results_dir: Path) -> None:
                     continue
                 pred = slope * bl + intercept
                 for v in vecs:
-                    lv = cell.get(s, {}).get(k, {}).get("steer", {}).get(v)
+                    lv = cell_get(cell, s, k, "steer", p, v)
                     if lv is not None:
                         obs_vals.append(lv)
                         pred_vals.append(pred)
@@ -972,7 +1010,7 @@ def main(results_dir: Path) -> None:
                 if bl is None:
                     continue
                 for v in vecs:
-                    lv = cell.get(s, {}).get(k, {}).get("steer", {}).get(v)
+                    lv = cell_get(cell, s, k, "steer", p, v)
                     if lv is not None:
                         num.append(lv)
                         den.append(bl)
@@ -994,6 +1032,55 @@ def main(results_dir: Path) -> None:
     ctrl_sum = controls_summary(ctrl_rows)
 
     n_rows = len(rows)
+    assert n_rows == 39646, f"row count {n_rows} != 39646"
+
+    # Real-data group-by check (independent of matrix_for)
+    gb = groupby_mean_ld_dld(rows)
+    gb_rows_csv: List[dict] = []
+    for s in SET_ORDER:
+        if s not in S_out:
+            continue
+        for k in CLASSES:
+            if k not in S_out[s]:
+                continue
+            conds = CONCEPT_CONDS if k == "concept" else RANDOM_CONDS
+            n_expected = set_p[s] * class_v[k]
+            for cond in conds:
+                key = (s, k, cond)
+                g = gb.get(key)
+                assert g is not None, f"missing group-by cell {key}"
+                assert g["n"] == n_expected, (
+                    f"{key}: n={g['n']} != prompts×vectors={n_expected}"
+                )
+                m_ld = S_out[s][k][cond]["LD"]["m"]
+                m_dld = S_out[s][k][cond]["dLD"]["m"]
+                assert abs(m_ld - g["mean_LD"]) < 1e-6, (
+                    f"{key} LD metrics={m_ld} groupby={g['mean_LD']}"
+                )
+                assert abs(m_dld - g["mean_dLD"]) < 1e-6, (
+                    f"{key} dLD metrics={m_dld} groupby={g['mean_dLD']}"
+                )
+                gb_rows_csv.append(
+                    {
+                        "set": s,
+                        "class": k,
+                        "cond": cond,
+                        "n": g["n"],
+                        "mean_LD": g["mean_LD"],
+                        "mean_dLD": g["mean_dLD"],
+                        "metrics_LD_m": m_ld,
+                        "metrics_dLD_m": m_dld,
+                    }
+                )
+    gb_path = raw / "groupby_check.csv"
+    with gb_path.open("w") as f:
+        f.write("set,class,cond,n,mean_LD,mean_dLD,metrics_LD_m,metrics_dLD_m\n")
+        for r in gb_rows_csv:
+            f.write(
+                f"{r['set']},{r['class']},{r['cond']},{r['n']},"
+                f"{r['mean_LD']},{r['mean_dLD']},{r['metrics_LD_m']},{r['metrics_dLD_m']}\n"
+            )
+
     sanity = {
         "run_status": summary.get("status"),
         "run_errors": summary.get("errors"),
@@ -1005,6 +1092,9 @@ def main(results_dir: Path) -> None:
         "prompts_per_set": set_p,
         "vectors_per_class": class_v,
         "bootstrap": {"n_resamples": N_BOOT, "seed": BOOT_SEED, "ci95_pctl": CI95},
+        "groupby_check": "PASS",
+        "groupby_check_path": str(gb_path.name),
+        "wo004a": True,
     }
 
     metrics: Dict[str, Any] = {
@@ -1022,6 +1112,7 @@ def main(results_dir: Path) -> None:
     (results_dir / "metrics.json").write_text(json.dumps(clean(metrics), indent=2))
     make_figures(results_dir, metrics, ld_hist)
     print(f"Wrote {results_dir / 'metrics.json'} and figures under {results_dir}")
+    print(f"groupby_check PASS → {gb_path}")
 
 
 if __name__ == "__main__":
